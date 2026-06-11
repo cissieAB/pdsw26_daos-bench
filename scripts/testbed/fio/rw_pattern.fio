@@ -6,7 +6,6 @@
 # Or run all sections: fio <this-script>.fio
 
 [global]
-ioengine=dfs
 runtime=60
 time_based=1
 direct=1
@@ -15,9 +14,13 @@ group_reporting=1
 randrepeat=0
 norandommap=1
 refill_buffers=1
-size=128M
+size=128m
 
 # ── Random Access ── #
+# Write-first
+[rand_write]
+rw=randwrite
+stonewall
 
 [rand_read]
 rw=randread
@@ -41,11 +44,13 @@ rwmixwrite=80
 unified_rw_reporting=1
 stonewall
 
-[rand_write]
-rw=randwrite
-stonewall
+
 
 # ── Sequential Access ── #
+[seq_write]
+rw=write
+stonewall
+
 [seq_read]
 rw=read
 stonewall
@@ -66,8 +71,4 @@ stonewall
 rw=readwrite
 rwmixwrite=80
 unified_rw_reporting=1
-stonewall
-
-[seq_write]
-rw=write
 stonewall

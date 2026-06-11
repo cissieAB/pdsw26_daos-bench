@@ -3,7 +3,7 @@
 # This script runs a sweep of fio tests using the DAOS DFS engine, varying
 #  numjobs and iodepth together to keep total queue depth constant at 256.
 
-set -euo pipefail
+set -euox pipefail
 
 # ---------------------------------------------------------------------------
 # 0. Locate fio and verify version / DFS engine support
@@ -45,14 +45,14 @@ fi
 CURRENT_CONT=""
 cleanup() {
     if [[ -n "${CURRENT_CONT}" ]]; then
-        daos container destroy --pool "${POOL}" --name "${CURRENT_CONT}" &>/dev/null || true
+        daos container destroy "${POOL}" "${CURRENT_CONT}" &>/dev/null || true
     fi
 }
 trap cleanup EXIT
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-bs1m}"       # DAOS container name
-OUTPUT_DIR_BASE=../../results/fio-dfs-heatmap-256-sweep   # base output directory for results
-TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+OUTPUT_DIR=../../../results/fio-dfs-heatmap-256-sweep   # base output directory for results
+TIMESTAMP=$(date +%s)
 
 # fio parameter list
 NUMJOBS_LIST=("4" "8" "16" "32" "64")                     # number of fio jobs
@@ -66,7 +66,7 @@ for run_id in "${!NUMJOBS_LIST[@]}"; do
     bs="${BLOCK_SIZE}"
     label="bs${bs}_nj${nj}_iod${iod}_${TIMESTAMP}"
     CONT="${CONT_BASE}_${label}"
-    OUTPUT_DIR="${OUTPUT_DIR_BASE}/${label}"
+
     mkdir -p "${OUTPUT_DIR}"
 
     echo "DAOS container: ${CONT}"
@@ -75,25 +75,36 @@ for run_id in "${!NUMJOBS_LIST[@]}"; do
     echo
 
     # Create container for this run
-    daos container create --pool "${POOL}" --name "${CONT}" &>/dev/null || {
+    # Must be a posix container
+    daos container create --type=POSIX "${POOL}" "${CONT}" &>/dev/null || {
         echo "ERROR: failed to create container ${CONT} in pool ${POOL}" >&2
         exit 1
     }
     CURRENT_CONT="${CONT}"
 
+    echo "###### Container properties:"
+    daos cont getprop ${POOL} ${CURRENT_CONT}
+    echo
+
+    echo "###### Container query"
+    daos cont query ${POOL} ${CURRENT_CONT}
+    echo
+
     # Run fio
-    "${FIO}" --name="test_${label}" \
+    ${FIO} \
+        --ioengine=dfs \
+        --size=128m \
         --pool="${POOL}" \
-        --container="${CONT}" \
+        --cont="${CURRENT_CONT}" \
         --bs="${bs}" \
         --numjobs="${nj}" \
         --iodepth="${iod}" \
         --output="${OUTPUT_DIR}/fio_${label}.json" \
         --output-format=json \
-        ./dfs_rw_pattern.fio
+        rw_pattern.fio --section=rand_write
 
     # Destroy container after each run
-    daos container destroy --pool "${POOL}" --name "${CONT}" &>/dev/null || {
+    daos container destroy "${POOL}" "${CONT}" &>/dev/null || {
         echo "ERROR: failed to destroy container ${CONT} in pool ${POOL}" >&2
     }
     CURRENT_CONT=""
@@ -102,4 +113,7 @@ for run_id in "${!NUMJOBS_LIST[@]}"; do
 
 done
 
-echo "Done. Results written to ${OUTPUT_DIR_BASE}/"
+echo "Done. Results written to ${OUTPUT_DIR}/"
+
+# Clean fio files
+rm *.0.0
