@@ -1,0 +1,13 @@
+# An example acl file to control the DAOS pool's accessibility
+# This acl file gives everyone under "scitestbed" group to create its own container.
+#
+# When create the pool (`dmg`), create with option "--group=scitestbed"
+# After creating the pool, update the acl with "dmg -d pool update-acl -a <this-acl-file> <pool_label>"
+#
+# Owner: xmei@
+# Owner Group: scitestbed@
+# Entries:
+A::OWNER@:rw
+A:G:GROUP@:rw
+A:G:scitestbed@:rw
+
