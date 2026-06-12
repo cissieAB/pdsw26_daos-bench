@@ -4,3 +4,6 @@
 # Plot files
 *.pdf
 *.png
+
+# Claude settings
+.claude
