@@ -50,7 +50,7 @@ cleanup() {
 trap cleanup EXIT
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-all-patterns}"
-OUTPUT_DIR=../../../results/fio-dfs-all-patterns
+OUTPUT_DIR=../../../results/testbed/fio-dfs-all-patterns
 TIMESTAMP=$(date +%s)
 
 NUMJOBS=32
