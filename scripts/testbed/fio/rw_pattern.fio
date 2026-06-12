@@ -15,6 +15,7 @@ randrepeat=0
 norandommap=1
 refill_buffers=1
 size=128m
+filename_format=fio_data.$jobnum.$filenum
 
 # ── Prefill: sequential write to guarantee all blocks exist before any read ── #
 [prefill]
