@@ -53,8 +53,8 @@ CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-all-patterns}"
 OUTPUT_DIR=../../../results/fio-dfs-all-patterns
 TIMESTAMP=$(date +%s)
 
-NUMJOBS=16
-IODEPTH=16
+NUMJOBS=32
+IODEPTH=8
 BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
 
 for bs in "${BLOCK_SIZE_LIST[@]}"; do
