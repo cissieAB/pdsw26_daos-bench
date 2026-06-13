@@ -25,7 +25,7 @@ FILE_SIZE="29g"
 # DFS scanner: 0 symlinks
 # DFS scanner: 0 directories
 # DFS scanner: 1 max tree depth
-# DFS scanner: 30667149142 bytes of total data
+# DFS scanner: 30667149142 bytes of total data  28.56 GiB
 # DFS scanner: 30667149142 bytes per file on average
 # DFS scanner: 30667149142 bytes is largest file size
 # DFS scanner: 1 entries in the largest directory
@@ -82,7 +82,6 @@ OUT_NVME="${OUTPUT_DIR}/nvmeof_seq_read_bs1m_nj1_iod32_${TIMESTAMP}.json"
     "${FIO_COMMON[@]}" \
     --ioengine=libaio \
     --filename="${SRC_FILE}" \
-    --filesize="${FILE_SIZE}" \
     --output="${OUT_NVME}"
 
 echo "NVMe-oF result: ${OUT_NVME}"
@@ -100,8 +99,8 @@ OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs1m_nj1_iod32_${TIMESTAMP}.json"
     --ioengine=dfs \
     --pool="${POOL}" \
     --cont="${CONT}" \
+    --size=28g \
     --filename="${DAOS_FILE}" \
-    --filesize="${FILE_SIZE}" \
     --output="${OUT_DAOS}"
 
 echo "DAOS result: ${OUT_DAOS}"
