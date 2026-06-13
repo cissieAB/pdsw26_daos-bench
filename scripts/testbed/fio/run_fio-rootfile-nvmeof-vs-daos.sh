@@ -40,7 +40,7 @@ mkdir -p "${OUTPUT_DIR}"
 FIO_COMMON=(
     --name=seq_read
     --rw=read
-    --bs=1m
+    --bs=4m
     --numjobs=1
     --iodepth=32
     --direct=1
@@ -76,7 +76,7 @@ fi
 # 1. NVMe-oF: read the file directly via libaio
 # ---------------------------------------------------------------------------
 echo "=== [1/2] NVMe-oF seq_read ==="
-OUT_NVME="${OUTPUT_DIR}/nvmeof_seq_read_bs1m_nj1_iod32_${TIMESTAMP}.json"
+OUT_NVME="${OUTPUT_DIR}/nvmeof_seq_read_bs4m_nj1_iod32_${TIMESTAMP}.json"
 
 "${FIO_NVME}" \
     "${FIO_COMMON[@]}" \
@@ -92,7 +92,7 @@ echo
 #    Source: daos://iobench/root-cp/test.root
 # ---------------------------------------------------------------------------
 echo "=== [2/2] DAOS DFS seq_read (pool=${POOL}, cont=${CONT}, file=${DAOS_FILE}) ==="
-OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs1m_nj1_iod32_${TIMESTAMP}.json"
+OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs4m_nj1_iod32_${TIMESTAMP}.json"
 
 "${FIO_DFS}" \
     "${FIO_COMMON[@]}" \
