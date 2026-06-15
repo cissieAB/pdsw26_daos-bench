@@ -43,7 +43,7 @@ fi
 # 2. Sweep parameters
 # ---------------------------------------------------------------------------
 NUMJOBS=1
-PATTERN="${FIO_PATTERN:-seq_read}"          # override via env if needed
+PATTERN="${FIO_PATTERN:-rand_write}"         # override via env if needed
 RUNTIME=60                                  # seconds per test run
 
 IODEPTH_LIST=("4" "8" "16" "32" "64" "128" "256")
@@ -95,33 +95,13 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
         daos cont query "${POOL}" "${CURRENT_CONT}"
         echo
 
-        # Prefill: sequential write so data exists before the read test.
-        # Both prefill and test use the same filename so the read finds the data.
-        "${FIO}" \
-            --name=prefill \
-            --ioengine=dfs \
-            --pool="${POOL}" \
-            --cont="${CURRENT_CONT}" \
-            --rw=write \
-            --bs="${bs}" \
-            --numjobs="${NUMJOBS}" \
-            --iodepth="${iod}" \
-            --size=4g \
-            --filename=fio_data \
-            --direct=1 \
-            --buffered=0 \
-            --group_reporting=1 \
-            --output-format=normal
-
-        echo
-
-        # Timed test run
+        # Timed test run (rand_write creates its own data — no prefill needed)
         "${FIO}" \
             --name="${PATTERN}" \
             --ioengine=dfs \
             --pool="${POOL}" \
             --cont="${CURRENT_CONT}" \
-            --rw=read \
+            --rw=randwrite \
             --bs="${bs}" \
             --numjobs="${NUMJOBS}" \
             --iodepth="${iod}" \
