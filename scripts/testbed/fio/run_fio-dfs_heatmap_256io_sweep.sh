@@ -51,7 +51,7 @@ cleanup() {
 trap cleanup EXIT
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-bs1m}"       # DAOS container name
-OUTPUT_DIR=../../../results/fio-dfs-heatmap-256-sweep   # base output directory for results
+OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-256io-sweep   # base output directory for results
 TIMESTAMP=$(date +%s)
 
 # fio parameter list
