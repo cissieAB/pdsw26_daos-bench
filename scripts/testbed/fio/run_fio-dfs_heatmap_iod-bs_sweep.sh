@@ -96,7 +96,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
         echo
 
         # Prefill: sequential write so data exists before the read test.
-        # Size is scaled to cover at least iodepth * bs worth of data (min 1g).
+        # Both prefill and test use the same filename so the read finds the data.
         "${FIO}" \
             --name=prefill \
             --ioengine=dfs \
@@ -107,6 +107,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
             --numjobs="${NUMJOBS}" \
             --iodepth="${iod}" \
             --size=4g \
+            --filename=fio_data \
             --direct=1 \
             --buffered=0 \
             --group_reporting=1 \
@@ -125,6 +126,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
             --numjobs="${NUMJOBS}" \
             --iodepth="${iod}" \
             --size=4g \
+            --filename=fio_data \
             --time_based=1 \
             --runtime="${RUNTIME}" \
             --direct=1 \
