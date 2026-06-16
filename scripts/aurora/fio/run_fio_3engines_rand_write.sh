@@ -13,7 +13,7 @@
 #   DAOS_CONT_NAME   (default: fio_3engines)
 #   DAOS_LIBIOIL     (default: /usr/lib64/libpil4dfs.so)
 #   DFUSE_MNT        (default: /tmp/dfuse_fio_3engines_$$)
-#   FIO_BS           (default: 4k)
+#   FIO_BS           (default: 1m)
 
 set -euox pipefail
 
@@ -98,7 +98,7 @@ trap cleanup EXIT
 
 create_cont() {
     local name="$1"
-    daos container create --type=POSIX --properties df_fac:0 "${POOL}" "${name}" || {
+    daos container create --type=POSIX --properties rd_fac:0 "${POOL}" "${name}" || {
         echo "ERROR: failed to create container ${name}" >&2
         exit 1
     }
