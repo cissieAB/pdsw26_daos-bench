@@ -1,0 +1,81 @@
+# Define R/W patterns
+# Groups: rand (random access), seq (sequential access)
+# Patterns: ReadOnly, ReadH (rwmixwrite=20), ReadB (rwmixread=50), WriteH (rwmixwrite=80), WriteOnly
+#
+# Usage: fio <this-script>.fio --section=<sec-name>
+# Or run all sections: fio <this-script>.fio
+
+[global]
+runtime=60
+time_based=1
+direct=1
+buffered=0
+group_reporting=1
+randrepeat=0
+norandommap=1
+refill_buffers=1
+size=128m
+filename_format=fio_data.$jobnum.$filenum
+
+# ── Prefill: sequential write to guarantee all blocks exist before any read ── #
+[prefill]
+rw=write
+time_based=0
+stonewall
+
+# ── Random Access ── #
+# Write-first
+[rand_write]
+rw=randwrite
+stonewall
+
+[rand_read]
+rw=randread
+stonewall
+
+[rand_readH]
+rw=randrw
+rwmixwrite=20
+unified_rw_reporting=1
+stonewall
+
+[rand_readB]
+rw=randrw
+rwmixread=50
+unified_rw_reporting=1
+stonewall
+
+[rand_writeH]
+rw=randrw
+rwmixwrite=80
+unified_rw_reporting=1
+stonewall
+
+
+
+# ── Sequential Access ── #
+[seq_write]
+rw=write
+stonewall
+
+[seq_read]
+rw=read
+stonewall
+
+[seq_readH]
+rw=readwrite
+rwmixwrite=20
+unified_rw_reporting=1
+stonewall
+
+[seq_readB]
+rw=readwrite
+rwmixread=50
+unified_rw_reporting=1
+stonewall
+
+[seq_writeH]
+rw=readwrite
+rwmixwrite=80
+unified_rw_reporting=1
+stonewall
