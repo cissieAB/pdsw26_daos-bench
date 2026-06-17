@@ -107,7 +107,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
             --bs=1m \
             --numjobs="${nj}" \
             --iodepth="${IODEPTH}" \
-            --size=4g \
+            --size=20g \
             --filename=fio_data \
             --direct=1 \
             --buffered=0 \
