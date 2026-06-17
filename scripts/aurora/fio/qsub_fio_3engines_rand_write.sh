@@ -1,4 +1,7 @@
 #!/bin/bash
+# Usage: cd scripts/aurora/fio && qsub qsub_fio_3engines_rand_write.sh
+#        DAOS_POOL_NAME=<pool> FIO_BS=4k qsub qsub_fio_3engines_rand_write.sh
+#
 #PBS -N fio_3engines_rand_write
 #PBS -l select=1
 #PBS -l walltime=02:00:00
@@ -11,7 +14,7 @@
 # ---------------------------------------------------------------------------
 # fio 3-engine rand_write comparison on Aurora
 #   1. libaio via dfuse (no interception lib)
-#   2. libaio via dfuse + LD_PRELOAD=libioil.so
+#   2. libaio via dfuse + LD_PRELOAD=/usr/lib64/libpil4dfs.so
 #   3. DAOS native DFS engine
 # numjobs=16, iodepth=16, bs=4k, runtime=60 s
 # ---------------------------------------------------------------------------
@@ -20,7 +23,12 @@ set -euox pipefail
 
 cd "${PBS_O_WORKDIR}"
 
-mkdir -p /logs
+mkdir -p "${HOME}/logs"
+
+# Load DAOS module
+echo "Loading DAOS module"
+module use /soft/modulefiles/ || { echo "ERROR: Failed to use modulefiles" >&2; exit 1; }
+module load daos || { echo "ERROR: Failed to load DAOS module" >&2; exit 1; }
 
 # ---------------------------------------------------------------------------
 # Environment

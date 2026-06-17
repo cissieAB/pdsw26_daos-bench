@@ -2,7 +2,7 @@
 
 # Compare three fio I/O engines on a DAOS POSIX container (rand_write, 60 s):
 #   1. libaio via dfuse mount (no interception lib)
-#   2. libaio via dfuse mount + LD_PRELOAD=libioil.so (I/O interception lib)
+#   2. libaio via dfuse mount + LD_PRELOAD=/usr/lib64/libpil4dfs.so (I/O interception lib)
 #   3. DAOS native DFS engine
 #
 # Each engine gets a fresh POSIX container (--properties df_fac:0) to ensure
@@ -11,8 +11,8 @@
 # Env overrides:
 #   DAOS_POOL_NAME   (default: e2sar)
 #   DAOS_CONT_NAME   (default: fio_3engines)
-#   DAOS_LIBIOIL     (default: /usr/lib64/libpil4dfs.so)
-#   DFUSE_MNT        (default: /tmp/dfuse_fio_3engines_$$)
+#   DAOS_LIBIL       (default: /usr/lib64/libpil4dfs.so)
+#   DFUSE_MNT        (default: /tmp/$USR/dfuse_fio_3engines_$$)
 #   FIO_BS           (default: 1m)
 
 set -euox pipefail
@@ -24,8 +24,8 @@ FIO="${HOME}/local/bin/fio"
 
 POOL="${DAOS_POOL_NAME:-e2sar}"
 CONT_BASE="${DAOS_CONT_NAME:-fio_3engines}"
-LIBIOIL="${DAOS_LIBIOIL:-/usr/lib64/libpil4dfs.so}"
-DFUSE_MNT="${DFUSE_MNT:-/tmp/dfuse_fio_3engines_$$}"
+LIBIL="${DAOS_LIBIL:-/usr/lib64/libpil4dfs.so}"
+DFUSE_MNT="${DFUSE_MNT:-/tmp/$USER/dfuse_fio_3engines_$$}"
 
 NUMJOBS=16
 IODEPTH=16
@@ -55,12 +55,12 @@ if ! "${FIO}" --enghelp dfs &>/dev/null; then
 fi
 echo "fio version OK and dfs engine is available."
 
-if [[ ! -f "${LIBIOIL}" ]]; then
-    echo "WARNING: libioil not found at ${LIBIOIL}; engine 2 will be skipped." >&2
+if [[ ! -f "${LIBIL}" ]]; then
+    echo "WARNING: LIBIL not found at ${LIBIL}; engine 2 will be skipped." >&2
 fi
 
-if ! daos pool query "${POOL}" &>/dev/null; then
-    echo "ERROR: DAOS pool '${POOL}' not accessible." >&2
+if ! daos pool query "${POOL}" | grep -q "Ready"; then
+    echo "ERROR: DAOS pool '${POOL}' not found or not Ready." >&2
     exit 1
 fi
 
@@ -78,11 +78,16 @@ mkdir -p "${DFUSE_MNT}"
 CURRENT_CONT=""
 
 dfuse_unmount() {
-    if mountpoint -q "${DFUSE_MNT}" 2>/dev/null; then
-        fusermount3 -u "${DFUSE_MNT}" 2>/dev/null \
-            || fusermount -u "${DFUSE_MNT}" 2>/dev/null \
-            || umount "${DFUSE_MNT}" || true
+    if mount | grep -q "${DFUSE_MNT}"; then
+        echo "Unmounting ${DFUSE_MNT}"
+        fusermount3 -u "${DFUSE_MNT}" \
+            || fusermount -u "${DFUSE_MNT}" \
+            || umount "${DFUSE_MNT}" \
+            || echo "WARNING: failed to unmount ${DFUSE_MNT}" >&2
         sleep 2
+    fi
+    if [[ -d "${DFUSE_MNT}" ]]; then
+        rmdir "${DFUSE_MNT}" || echo "WARNING: failed to remove ${DFUSE_MNT}" >&2
     fi
 }
 
@@ -92,7 +97,6 @@ cleanup() {
         daos container destroy "${POOL}" "${CURRENT_CONT}" &>/dev/null || true
         CURRENT_CONT=""
     fi
-    rmdir "${DFUSE_MNT}" 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -129,7 +133,7 @@ LABEL="libaio_dfuse_noint_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
 CONT="${CONT_BASE}_eng1_${TIMESTAMP}"
 create_cont "${CONT}"
 
-dfuse --pool="${POOL}" --container="${CONT}" --mountpoint="${DFUSE_MNT}"
+start-dfuse.sh -m "${DFUSE_MNT}" --pool "${POOL}" --container "${CONT}"
 sleep 3
 
 "${FIO}" \
@@ -140,33 +144,38 @@ sleep 3
     --numjobs="${NUMJOBS}" \
     --iodepth="${IODEPTH}" \
     --size="${SIZE}" \
-    --filename="${DFUSE_MNT}/${FIO_FILE}" \
+    --directory="${DFUSE_MNT}" \
+    --nrfiles=4 \
     --time_based=1 \
     --runtime="${RUNTIME}" \
     --direct=1 \
     --buffered=0 \
+    --randrepeat=0 \
+    --norandommap \
+    --refill_buffers \
     --group_reporting=1 \
     --output="${OUTPUT_DIR}/fio_${LABEL}.json" \
     --output-format=json
 
 dfuse_unmount
 destroy_cont "${CONT}"
+sleep 10
 
 # ---------------------------------------------------------------------------
-# 4. Engine 2 — dfuse + libaio + libioil (I/O interception lib)
+# 4. Engine 2 — dfuse + libaio + libpil4dfs (I/O interception lib)
 # ---------------------------------------------------------------------------
 echo "========================================================"
-echo "  Engine 2: dfuse + libaio + libioil (interception lib)"
+echo "  Engine 2: dfuse + libaio + libpil4dfs (interception lib)"
 echo "========================================================"
-if [[ -f "${LIBIOIL}" ]]; then
-    LABEL="libaio_dfuse_libioil_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
+if [[ -f "${LIBIL}" ]]; then
+    LABEL="libaio_dfuse_LIBIL_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
     CONT="${CONT_BASE}_eng2_${TIMESTAMP}"
     create_cont "${CONT}"
 
-    dfuse --pool="${POOL}" --container="${CONT}" --mountpoint="${DFUSE_MNT}"
+    start-dfuse.sh -m "${DFUSE_MNT}" --pool "${POOL}" --container "${CONT}"
     sleep 3
 
-    LD_PRELOAD="${LIBIOIL}" "${FIO}" \
+    LD_PRELOAD="${LIBIL}" "${FIO}" \
         --name="rand_write" \
         --ioengine=libaio \
         --rw=randwrite \
@@ -174,11 +183,15 @@ if [[ -f "${LIBIOIL}" ]]; then
         --numjobs="${NUMJOBS}" \
         --iodepth="${IODEPTH}" \
         --size="${SIZE}" \
-        --filename="${DFUSE_MNT}/${FIO_FILE}" \
+        --directory="${DFUSE_MNT}" \
+        --nrfiles=4 \
         --time_based=1 \
         --runtime="${RUNTIME}" \
         --direct=1 \
         --buffered=0 \
+        --randrepeat=0 \
+        --norandommap \
+        --refill_buffers \
         --group_reporting=1 \
         --output="${OUTPUT_DIR}/fio_${LABEL}.json" \
         --output-format=json
@@ -186,9 +199,11 @@ if [[ -f "${LIBIOIL}" ]]; then
     dfuse_unmount
     destroy_cont "${CONT}"
 else
-    echo "SKIP: libioil not found at ${LIBIOIL}"
+    echo "SKIP: LIBIL not found at ${LIBIL}"
     echo
 fi
+
+sleep 10
 
 # ---------------------------------------------------------------------------
 # 5. Engine 3 — DAOS native DFS engine
@@ -215,6 +230,9 @@ create_cont "${CONT}"
     --runtime="${RUNTIME}" \
     --direct=1 \
     --buffered=0 \
+    --randrepeat=0 \
+    --norandommap \
+    --refill_buffers \
     --group_reporting=1 \
     --output="${OUTPUT_DIR}/fio_${LABEL}.json" \
     --output-format=json
@@ -225,4 +243,3 @@ echo "========================================================"
 echo "Done. Results written to ${OUTPUT_DIR}/"
 echo "========================================================"
 
-rm -f ./*.0.0
