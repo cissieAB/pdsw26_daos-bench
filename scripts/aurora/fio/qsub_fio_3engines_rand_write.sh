@@ -59,7 +59,7 @@ daos pool query "${DAOS_POOL_NAME}"
 # ---------------------------------------------------------------------------
 # Run the benchmark
 # ---------------------------------------------------------------------------
-bash 
+bash run_fio_libil_rand_write.sh    # <== update the script
 
 echo
 echo "End: $(date)"

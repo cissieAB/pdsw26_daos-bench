@@ -6,8 +6,8 @@
 # Env overrides:
 #   DAOS_POOL_NAME   (default: e2sar)
 #   DAOS_CONT_NAME   (default: fio_libil)
-#   DAOS_LIBIL       (default: /usr/lib64/libpil4dfs.so)
-#   DFUSE_MNT        (default: /tmp/$USER/<pool>/<cont>)
+#   DAOS_LIBIL       (default: /usr/lib64/libpil4dfs.so, /usr/lib64/libioil.so)
+#   DFUSE_MNT        (default: /tmp/<pool>/<cont>)
 #   FIO_BS           (default: 1m)
 
 set -euox pipefail
@@ -29,7 +29,8 @@ FIO="${HOME}/local/bin/fio"
 
 POOL="${DAOS_POOL_NAME:-e2sar}"
 CONT="${DAOS_CONT_NAME:-fio_libil}"
-LIBIL="${DAOS_LIBIL:-/usr/lib64/libpil4dfs.so}"
+# libpil4dfs hangs with fio
+LIBIL="${DAOS_LIBIL:-/usr/lib64/libioil.so}"
 DFUSE_MNT="${DFUSE_MNT:-/tmp/${POOL}/${CONT}}"
 
 NUMJOBS=16
@@ -54,7 +55,7 @@ FIO_VERSION=$("${FIO}" --version | awk '{print $2}')
 echo "Using fio: ${FIO} (${FIO_VERSION})"
 
 if [[ ! -f "${LIBIL}" ]]; then
-    echo "ERROR: libpil4dfs not found at ${LIBIL}" >&2
+    echo "ERROR: interception library not found at ${LIBIL}" >&2
     exit 1
 fi
 echo "Using interception lib: ${LIBIL}"
@@ -87,10 +88,10 @@ trap cleanup EXIT
 # ---------------------------------------------------------------------------
 # 3. Run
 # ---------------------------------------------------------------------------
-LABEL="libpil4dfs_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
+LABEL="libil_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
 
 echo "========================================================"
-echo "  dfuse + libaio + libpil4dfs (interception lib)"
+echo "  dfuse + libaio + nterception lib"
 echo "  container: ${CONT}"
 echo "========================================================"
 
@@ -132,6 +133,7 @@ LD_PRELOAD="${LIBIL}" "${FIO}" \
     --output="${OUTPUT_DIR}/fio_${LABEL}.json" \
     --output-format=json
 
+# Unmount container on compute nodes
 clean-dfuse.sh /tmp/$POOL/$CONT
 daos container destroy "${POOL}" "${CONT}" &>/dev/null \
     || echo "WARNING: failed to destroy container ${CONT}" >&2

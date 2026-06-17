@@ -69,22 +69,7 @@ echo
 # ---------------------------------------------------------------------------
 CURRENT_CONT=""
 
-dfuse_unmount() {
-    if mount | grep -q "${DFUSE_MNT}"; then
-        echo "Unmounting ${DFUSE_MNT}"
-        fusermount3 -u "${DFUSE_MNT}" \
-            || fusermount -u "${DFUSE_MNT}" \
-            || umount "${DFUSE_MNT}" \
-            || echo "WARNING: failed to unmount ${DFUSE_MNT}" >&2
-        sleep 2
-    fi
-    if [[ -d "${DFUSE_MNT}" ]]; then
-        rmdir "${DFUSE_MNT}" || echo "WARNING: failed to remove ${DFUSE_MNT}" >&2
-    fi
-}
-
 cleanup() {
-    dfuse_unmount
     if [[ -n "${CURRENT_CONT}" ]]; then
         daos container destroy "${POOL}" "${CURRENT_CONT}" &>/dev/null || true
         CURRENT_CONT=""
@@ -114,8 +99,10 @@ daos cont query "${POOL}" "${CONT}"
 echo
 
 mkdir -p "${DFUSE_MNT}"
-start-dfuse.sh -m "${DFUSE_MNT}" --pool "${POOL}" --container "${CONT}"
+# Mounting script on compute nodes
+launch-dfuse.sh ${POOL}:${CONT}
 sleep 3
+mount | grep dfuse
 
 "${FIO}" \
     --name="rand_write" \
@@ -138,7 +125,8 @@ sleep 3
     --output="${OUTPUT_DIR}/fio_${LABEL}.json" \
     --output-format=json
 
-dfuse_unmount
+# Unmount container on compute nodes
+clean-dfuse.sh /tmp/$POOL/$CONT
 daos container destroy "${POOL}" "${CONT}" &>/dev/null \
     || echo "WARNING: failed to destroy container ${CONT}" >&2
 CURRENT_CONT=""
