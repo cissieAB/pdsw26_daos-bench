@@ -6,7 +6,7 @@
 # Env overrides:
 #   DAOS_POOL_NAME   (default: e2sar)
 #   DAOS_CONT_NAME   (default: fio_dfuse)
-#   DFUSE_MNT        (default: /tmp/$USER/<pool>/<cont>)
+#   DFUSE_MNT        (default: /tmp/<pool>/<cont>)
 #   FIO_BS           (default: 1m)
 
 
@@ -125,11 +125,13 @@ mount | grep dfuse
     --output="${OUTPUT_DIR}/fio_${LABEL}.json" \
     --output-format=json
 
-# Unmount container on compute nodes
-clean-dfuse.sh /tmp/$POOL/$CONT
+sleep 10 
+
+fusermount3 -u /tmp/$POOL/$CONT
 daos container destroy "${POOL}" "${CONT}" &>/dev/null \
     || echo "WARNING: failed to destroy container ${CONT}" >&2
 CURRENT_CONT=""
+
 
 echo "========================================================"
 echo "Done. Result: ${OUTPUT_DIR}/fio_${LABEL}.json"
