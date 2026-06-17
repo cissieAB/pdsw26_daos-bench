@@ -51,7 +51,7 @@ NUMJOB_LIST=("4" "8" "16" "32" "64")
 BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-heatmap}"
-OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-nj-bs-sweep-seq_read
+OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-nj-bs-sweep
 TIMESTAMP=$(date +%s)
 
 mkdir -p "${OUTPUT_DIR}"
