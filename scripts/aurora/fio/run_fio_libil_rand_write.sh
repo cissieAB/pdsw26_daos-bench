@@ -6,9 +6,20 @@
 # Env overrides:
 #   DAOS_POOL_NAME   (default: e2sar)
 #   DAOS_CONT_NAME   (default: fio_libil)
-#   DAOS_LIBIL       (default: /usr/lib64/libpil4dfs.so, /usr/lib64/libioil.so)
+#   DAOS_LIBIL       (default: /usr/lib64/libioil.so)
 #   DFUSE_MNT        (default: /<pool>/<cont>)
 #   FIO_BS           (default: 1m)
+#
+# Intercept library notes:
+#   libioil    -- intercepts POSIX write()/pwrite() only; fio's libaio engine uses
+#                 io_submit/io_getevents instead, so the intercept is a no-op and
+#                 throughput is slightly below plain dfuse (~2.5% regression from
+#                 fd-tracking overhead).
+#   libpil4dfs -- calls daos_init() in its constructor; fio forks numjobs worker
+#                 processes AFTER the library loads. The fork'd children inherit a
+#                 non-fork-safe DAOS agent connection and exit silently (_exit(0))
+#                 before doing any I/O. Workaround to try: add --thread to fio so
+#                 workers are pthreads (share parent DAOS state) rather than forks.
 
 set -euox pipefail
 
@@ -29,8 +40,9 @@ FIO="${HOME}/local/bin/fio"
 
 POOL="${DAOS_POOL_NAME:-e2sar}"
 CONT="${DAOS_CONT_NAME:-fio_libil}"
-# libpil4dfs hangs with fio, libioil gives lower bw
-LIBIL="${DAOS_LIBIL:-/usr/lib64/libpil4dfs.so}"
+# libpil4dfs: fio quits silently (fork-safety issue, see header note)
+# libioil: functional but ~2.5% slower than plain dfuse (libaio bypass)
+LIBIL="${DAOS_LIBIL:-/usr/lib64/libioil.so}"
 DFUSE_MNT="${DFUSE_MNT:-/tmp/${POOL}/${CONT}}"
 
 NUMJOBS=16
