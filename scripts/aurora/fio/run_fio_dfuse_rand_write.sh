@@ -26,7 +26,7 @@ module load daos || { echo "ERROR: Failed to load DAOS module" >&2; exit 1; }
 # 0. Config
 # ---------------------------------------------------------------------------
 FIO="${HOME}/local/bin/fio"
-FIOENGINE="${FIOENGINE:-pvync2}"     # override with e.g. FIOENGINE=libaio ./run_fio_dfuse_rand_write.sh
+FIOENGINE="${FIOENGINE:-pvsync2}"     # override with e.g. FIOENGINE=libaio ./run_fio_dfuse_rand_write.sh
 
 POOL="${DAOS_POOL_NAME:-e2sar}"
 CONT="${DAOS_CONT_NAME:-fio_dfuse}"
@@ -60,7 +60,7 @@ fi
 
 echo
 echo "Pool:    ${POOL}"
-echo "Engine:  libaio via dfuse (no interception lib)"
+echo "Engine:  ${FIOENGINE} via dfuse (no interception lib)"
 echo "Pattern: rand_write"
 echo "numjobs=${NUMJOBS}  iodepth=${IODEPTH}  bs=${BS}  runtime=${RUNTIME}s"
 echo

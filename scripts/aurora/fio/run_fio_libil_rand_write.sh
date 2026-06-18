@@ -104,7 +104,7 @@ trap cleanup EXIT
 LABEL="libioil_${FIOENGINE}_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
 
 echo "========================================================"
-echo "  dfuse + libaio + interception lib"
+echo "  dfuse + ${FIOENGINE} + interception lib"
 echo "  container: ${CONT}"
 echo "========================================================"
 
