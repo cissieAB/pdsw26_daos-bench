@@ -73,18 +73,23 @@ if ! daos container query "${POOL}" "${CONT}" &>/dev/null; then
 fi
 
 # ---------------------------------------------------------------------------
-# 1. NVMe-oF: read the file directly via libaio
+# 1. NVMe-oF: read the file directly — iterate over engines, 10 runs each
 # ---------------------------------------------------------------------------
 echo "=== [1/2] NVMe-oF seq_read ==="
-OUT_NVME="${OUTPUT_DIR}/nvmeof_seq_read_bs4m_nj1_iod32_${TIMESTAMP}.json"
+NVME_ENGINES=(pvsync2 libaio psync)
 
-"${FIO_NVME}" \
-    "${FIO_COMMON[@]}" \
-    --ioengine=libaio \
-    --filename="${SRC_FILE}" \
-    --output="${OUT_NVME}"
-
-echo "NVMe-oF result: ${OUT_NVME}"
+for ENGINE in "${NVME_ENGINES[@]}"; do
+    for RUN in $(seq 1 10); do
+        OUT_NVME="${OUTPUT_DIR}/${ENGINE}_nvmeof_seq_read_bs4m_nj1_iod32_${TIMESTAMP}.json"
+        echo "--- NVMe-oF engine=${ENGINE} run=${RUN}/10 ---"
+        "${FIO_NVME}" \
+            "${FIO_COMMON[@]}" \
+            --ioengine="${ENGINE}" \
+            --filename="${SRC_FILE}" \
+            --output="${OUT_NVME}"
+        echo "NVMe-oF result: ${OUT_NVME}"
+    done
+done
 echo
 
 # ---------------------------------------------------------------------------
@@ -92,18 +97,20 @@ echo
 #    Source: daos://iobench/root-cp/test.root
 # ---------------------------------------------------------------------------
 echo "=== [2/2] DAOS DFS seq_read (pool=${POOL}, cont=${CONT}, file=${DAOS_FILE}) ==="
-OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs4m_nj1_iod32_${TIMESTAMP}.json"
 
-"${FIO_DFS}" \
-    "${FIO_COMMON[@]}" \
-    --ioengine=dfs \
-    --pool="${POOL}" \
-    --cont="${CONT}" \
-    --size=28g \
-    --filename="${DAOS_FILE}" \
-    --output="${OUT_DAOS}"
-
-echo "DAOS result: ${OUT_DAOS}"
+for RUN in $(seq 1 10); do
+    OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs4m_nj1_iod32_dfs_${TIMESTAMP}.json"
+    echo "--- DAOS DFS run=${RUN}/10 ---"
+    "${FIO_DFS}" \
+        "${FIO_COMMON[@]}" \
+        --ioengine=dfs \
+        --pool="${POOL}" \
+        --cont="${CONT}" \
+        --size=28g \
+        --filename="${DAOS_FILE}" \
+        --output="${OUT_DAOS}"
+    echo "DAOS result: ${OUT_DAOS}"
+done
 echo
 
 echo "=== Done. Results in ${OUTPUT_DIR}/ ==="
