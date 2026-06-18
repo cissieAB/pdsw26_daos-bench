@@ -37,6 +37,7 @@ module load daos || { echo "ERROR: Failed to load DAOS module" >&2; exit 1; }
 # 0. Config
 # ---------------------------------------------------------------------------
 FIO="${HOME}/local/bin/fio"
+FIOENGINE="${FIOENGINE:-pvsync2}"     # override with e.g. FIOENGINE=libaio ./run_fio_libil_rand_write.sh
 
 POOL="${DAOS_POOL_NAME:-e2sar}"
 CONT="${DAOS_CONT_NAME:-fio_libil}"
@@ -79,7 +80,7 @@ fi
 
 echo
 echo "Pool:    ${POOL}"
-echo "Engine:  libaio via dfuse + LD_PRELOAD=${LIBIL}"
+echo "Engine:  ${FIOENGINE} via dfuse + LD_PRELOAD=${LIBIL}"
 echo "Pattern: rand_write"
 echo "numjobs=${NUMJOBS}  iodepth=${IODEPTH}  bs=${BS}  runtime=${RUNTIME}s"
 echo
@@ -100,7 +101,7 @@ trap cleanup EXIT
 # ---------------------------------------------------------------------------
 # 3. Run
 # ---------------------------------------------------------------------------
-LABEL="libil_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
+LABEL="libioil_${FIOENGINE}_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
 
 echo "========================================================"
 echo "  dfuse + libaio + interception lib"
@@ -126,7 +127,7 @@ mount | grep dfuse
 
 LD_PRELOAD="${LIBIL}" "${FIO}" \
     --name="rand_write" \
-    --ioengine=libaio \
+    --ioengine=${FIOENGINE} \
     --rw=randwrite \
     --bs="${BS}" \
     --numjobs="${NUMJOBS}" \
