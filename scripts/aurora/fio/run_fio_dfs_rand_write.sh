@@ -1,6 +1,7 @@
 #!/usr/bin/bash
 
 # fio rand_write: DAOS POSIX container via native DFS engine
+# Runs 10 times; container is destroyed and recreated before each run.
 # numjobs=16, iodepth=16, runtime=60 s
 #
 # Env overrides:
@@ -34,7 +35,7 @@ BS="${FIO_BS:-1m}"
 RUNTIME=60
 SIZE="2g"
 FIO_FILE="fio_data"
-TIMESTAMP=$(date +%s)
+NRUNS=10
 
 OUTPUT_DIR=../../../results/aurora/fio/3engines-rand_write
 mkdir -p "${OUTPUT_DIR}"
@@ -82,54 +83,61 @@ cleanup() {
 trap cleanup EXIT
 
 # ---------------------------------------------------------------------------
-# 3. Run
+# 3. Loop 10 runs — destroy/recreate container before each run
 # ---------------------------------------------------------------------------
-LABEL="dfs_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
+for (( RUN=1; RUN<=NRUNS; RUN++ )); do
+    TIMESTAMP=$(date +%s)
+    LABEL="dfs_bs${BS}_nj${NUMJOBS}_iod${IODEPTH}_${TIMESTAMP}"
+
+    echo "========================================================"
+    echo "  DAOS native DFS engine  run ${RUN}/${NRUNS}"
+    echo "  Recreating container: ${CONT}"
+    echo "========================================================"
+
+    # Destroy previous container if it exists
+    daos container destroy "${POOL}" "${CONT}" &>/dev/null || true
+    CURRENT_CONT=""
+
+    daos container create --type=POSIX --properties rd_fac:0 "${POOL}" "${CONT}" || {
+        echo "ERROR: failed to create container ${CONT}" >&2
+        exit 1
+    }
+    CURRENT_CONT="${CONT}"
+    echo "###### Container properties:"
+    daos cont getprop "${POOL}" "${CONT}"
+    echo "###### Container query:"
+    daos cont query "${POOL}" "${CONT}"
+    echo
+
+    "${FIO}" \
+        --name="rand_write" \
+        --ioengine=dfs \
+        --pool="${POOL}" \
+        --cont="${CONT}" \
+        --rw=randwrite \
+        --bs="${BS}" \
+        --numjobs="${NUMJOBS}" \
+        --iodepth="${IODEPTH}" \
+        --size="${SIZE}" \
+        --filename="${FIO_FILE}" \
+        --time_based=1 \
+        --runtime="${RUNTIME}" \
+        --randrepeat=0 \
+        --norandommap \
+        --refill_buffers \
+        --group_reporting=1 \
+        --output="${OUTPUT_DIR}/fio_${LABEL}.json" \
+        --output-format=json
+
+    echo "Done: ${OUTPUT_DIR}/fio_${LABEL}.json"
+
+    daos container destroy "${POOL}" "${CONT}" &>/dev/null \
+        || echo "WARNING: failed to destroy container ${CONT}" >&2
+    CURRENT_CONT=""
+
+    sleep 10
+done
 
 echo "========================================================"
-echo "  DAOS native DFS engine"
-echo "  container: ${CONT}"
+echo "All runs complete."
 echo "========================================================"
-
-daos container create --type=POSIX --properties rd_fac:0 "${POOL}" "${CONT}" || {
-    echo "ERROR: failed to create container ${CONT}" >&2
-    exit 1
-}
-CURRENT_CONT="${CONT}"
-echo "###### Container properties:"
-daos cont getprop "${POOL}" "${CONT}"
-echo "###### Container query:"
-daos cont query "${POOL}" "${CONT}"
-echo
-
-"${FIO}" \
-    --name="rand_write" \
-    --ioengine=dfs \
-    --pool="${POOL}" \
-    --cont="${CONT}" \
-    --rw=randwrite \
-    --bs="${BS}" \
-    --numjobs="${NUMJOBS}" \
-    --iodepth="${IODEPTH}" \
-    --size="${SIZE}" \
-    --filename="${FIO_FILE}" \
-    --time_based=1 \
-    --runtime="${RUNTIME}" \
-    --direct=1 \
-    --buffered=0 \
-    --randrepeat=0 \
-    --norandommap \
-    --refill_buffers \
-    --group_reporting=1 \
-    --output="${OUTPUT_DIR}/fio_${LABEL}.json" \
-    --output-format=json
-
-daos container destroy "${POOL}" "${CONT}" &>/dev/null \
-    || echo "WARNING: failed to destroy container ${CONT}" >&2
-CURRENT_CONT=""
-
-echo "========================================================"
-echo "Done. Result: ${OUTPUT_DIR}/fio_${LABEL}.json"
-echo "========================================================"
-
-rm -f ./*.0.0
