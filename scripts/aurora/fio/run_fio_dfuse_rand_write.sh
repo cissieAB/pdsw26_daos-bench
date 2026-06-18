@@ -131,8 +131,6 @@ for FIOENGINE in "${ENGINES[@]}"; do
             --nrfiles=4 \
             --time_based=1 \
             --runtime="${RUNTIME}" \
-            --direct=1 \
-            --buffered=0 \
             --randrepeat=0 \
             --norandommap \
             --refill_buffers \
