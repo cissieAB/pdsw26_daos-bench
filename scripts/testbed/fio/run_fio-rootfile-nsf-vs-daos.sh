@@ -1,10 +1,21 @@
 #!/usr/bin/bash
-# Sequential-read benchmark of a single ROOT file on NSF then on DAOS DFS.
+# Sequential-read benchmark of a single ROOT file on DAOS DFS then on Network File System (NSF) over 100 GbE.
 # bs iterates over: 4k 4m 1m; numjobs=1, iodepth=32, reads full 29 GiB file once
 #
-# Usage: bash run_fio-rootfile-nsf-vs-daos.sh
+# Usage: bash run_fio-rootfile-nsf-vs-daos.sh [--skip-daos]
 
 set -euox pipefail
+
+# ---------------------------------------------------------------------------
+# Argument parsing
+# ---------------------------------------------------------------------------
+SKIP_DAOS=false
+for _arg in "$@"; do
+    case "${_arg}" in
+        --skip-daos) SKIP_DAOS=true ;;
+        *) echo "Unknown argument: ${_arg}" >&2; exit 1 ;;
+    esac
+done
 
 # ---------------------------------------------------------------------------
 # 0. Config
@@ -54,45 +65,50 @@ FIO_COMMON=(
 if [[ ! -x "${FIO_NSF}" ]]; then
     echo "ERROR: fio not found at ${FIO_NSF}" >&2; exit 1
 fi
-if [[ ! -x "${FIO_DFS}" ]]; then
-    echo "ERROR: fio not found at ${FIO_DFS}" >&2; exit 1
-fi
 if [[ ! -f "${SRC_FILE}" ]]; then
     echo "ERROR: source file not found: ${SRC_FILE}" >&2; exit 1
 fi
-if ! "${FIO_DFS}" --enghelp dfs &>/dev/null; then
-    echo "ERROR: fio dfs engine not available" >&2; exit 1
-fi
-if ! daos pool query "${POOL}" &>/dev/null; then
-    echo "ERROR: DAOS pool '${POOL}' not accessible" >&2; exit 1
-fi
-if ! daos container query "${POOL}" "${CONT}" &>/dev/null; then
-    echo "ERROR: DAOS container '${CONT}' not accessible in pool '${POOL}'" >&2; exit 1
+if [[ "${SKIP_DAOS}" == false ]]; then
+    if [[ ! -x "${FIO_DFS}" ]]; then
+        echo "ERROR: fio not found at ${FIO_DFS}" >&2; exit 1
+    fi
+    if ! "${FIO_DFS}" --enghelp dfs &>/dev/null; then
+        echo "ERROR: fio dfs engine not available" >&2; exit 1
+    fi
+    if ! daos pool query "${POOL}" &>/dev/null; then
+        echo "ERROR: DAOS pool '${POOL}' not accessible" >&2; exit 1
+    fi
+    if ! daos container query "${POOL}" "${CONT}" &>/dev/null; then
+        echo "ERROR: DAOS container '${CONT}' not accessible in pool '${POOL}'" >&2; exit 1
+    fi
 fi
 
 # ---------------------------------------------------------------------------
 # 1. DAOS DFS: read pre-copied file via dfs ioengine
 #    Source: daos://iobench/root-cp/test.root
 # ---------------------------------------------------------------------------
-echo "=== [1/2] DAOS DFS seq_read (pool=${POOL}, cont=${CONT}, file=${DAOS_FILE}) ==="
-
-for BS in "${BS_LIST[@]}"; do
-    for RUN in $(seq 1 10); do
-        OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs${BS}_nj1_iod32_dfs_$(date +%s).json"
-        echo "--- DAOS DFS bs=${BS} run=${RUN}/10 ---"
-        "${FIO_DFS}" \
-            "${FIO_COMMON[@]}" \
-            --bs="${BS}" \
-            --ioengine=dfs \
-            --pool="${POOL}" \
-            --cont="${CONT}" \
-            --size=28g \
-            --filename="${DAOS_FILE}" \
-            --output="${OUT_DAOS}"
-        echo "DAOS result: ${OUT_DAOS}"
-        sleep 5
+if [[ "${SKIP_DAOS}" == true ]]; then
+    echo "=== [1/2] DAOS DFS seq_read — SKIPPED ==="
+else
+    echo "=== [1/2] DAOS DFS seq_read (pool=${POOL}, cont=${CONT}, file=${DAOS_FILE}) ==="
+    for BS in "${BS_LIST[@]}"; do
+        for RUN in $(seq 1 10); do
+            OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs${BS}_nj1_iod32_dfs_$(date +%s).json"
+            echo "--- DAOS DFS bs=${BS} run=${RUN}/10 ---"
+            "${FIO_DFS}" \
+                "${FIO_COMMON[@]}" \
+                --bs="${BS}" \
+                --ioengine=dfs \
+                --pool="${POOL}" \
+                --cont="${CONT}" \
+                --size=28g \
+                --filename="${DAOS_FILE}" \
+                --output="${OUT_DAOS}"
+            echo "DAOS result: ${OUT_DAOS}"
+            sleep 5
+        done
     done
-done
+fi
 echo
 
 # ---------------------------------------------------------------------------
