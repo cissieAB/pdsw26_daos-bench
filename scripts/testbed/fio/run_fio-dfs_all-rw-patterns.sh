@@ -103,6 +103,3 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
 done
 
 echo "Done. Results written to ${OUTPUT_DIR}/"
-
-# Clean fio files
-rm -f ./*.0.0

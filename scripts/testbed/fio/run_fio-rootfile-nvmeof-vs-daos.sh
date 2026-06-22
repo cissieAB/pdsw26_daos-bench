@@ -11,7 +11,6 @@ set -euox pipefail
 # ---------------------------------------------------------------------------
 FIO_NVME="/usr/bin/fio"         # system fio for NVMe-oF (no DFS engine needed)
 FIO_DFS="${HOME}/local/bin/fio"    # custom build with DAOS DFS engine
-TIMESTAMP=$(date +%s)
 
 SRC_FILE="/nvme/haidis/gluex/eta3pi_trees/data2020/ds_tree/PiPiGG_Tree_073266.root"
 FILE_SIZE="29g"
@@ -43,8 +42,6 @@ FIO_COMMON=(
     --bs=4m
     --numjobs=1
     --iodepth=32
-    --direct=1
-    --buffered=0
     --group_reporting=1
     --randrepeat=0
     --output-format=json
@@ -80,7 +77,7 @@ NVME_ENGINES=(pvsync2 libaio psync)
 
 for ENGINE in "${NVME_ENGINES[@]}"; do
     for RUN in $(seq 1 10); do
-        OUT_NVME="${OUTPUT_DIR}/${ENGINE}_nvmeof_seq_read_bs4m_nj1_iod32_${TIMESTAMP}.json"
+        OUT_NVME="${OUTPUT_DIR}/${ENGINE}_nvmeof_seq_read_bs4m_nj1_iod32_$(date +%s).json"
         echo "--- NVMe-oF engine=${ENGINE} run=${RUN}/10 ---"
         "${FIO_NVME}" \
             "${FIO_COMMON[@]}" \
@@ -88,6 +85,8 @@ for ENGINE in "${NVME_ENGINES[@]}"; do
             --filename="${SRC_FILE}" \
             --output="${OUT_NVME}"
         echo "NVMe-oF result: ${OUT_NVME}"
+
+        sleep 5
     done
 done
 echo
@@ -99,7 +98,7 @@ echo
 echo "=== [2/2] DAOS DFS seq_read (pool=${POOL}, cont=${CONT}, file=${DAOS_FILE}) ==="
 
 for RUN in $(seq 1 10); do
-    OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs4m_nj1_iod32_dfs_${TIMESTAMP}.json"
+    OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs4m_nj1_iod32_dfs_$(date +%s).json"
     echo "--- DAOS DFS run=${RUN}/10 ---"
     "${FIO_DFS}" \
         "${FIO_COMMON[@]}" \
@@ -110,6 +109,7 @@ for RUN in $(seq 1 10); do
         --filename="${DAOS_FILE}" \
         --output="${OUT_DAOS}"
     echo "DAOS result: ${OUT_DAOS}"
+    sleep 5
 done
 echo
 
