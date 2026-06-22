@@ -13,7 +13,6 @@ FIO_NSF="/usr/bin/fio"         # system fio for NSF (no DFS engine needed)
 FIO_DFS="/home/xmei/local/bin/fio"    # custom build with DAOS DFS engine
 
 SRC_FILE="/nvme/haidis/gluex/eta3pi_trees/data2020/ds_tree/PiPiGG_Tree_073266.root"
-FILE_SIZE="28g"
 
 # Pre-copied DAOS location: daos://iobench/root-cp/test.root
 # [xmei@ebpf2203 ~]$ daos fs scan iobench root-cp
