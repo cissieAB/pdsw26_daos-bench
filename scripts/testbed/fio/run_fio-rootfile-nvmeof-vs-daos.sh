@@ -13,7 +13,7 @@ FIO_NVME="/usr/bin/fio"         # system fio for NVMe-oF (no DFS engine needed)
 FIO_DFS="${HOME}/local/bin/fio"    # custom build with DAOS DFS engine
 
 SRC_FILE="/nvme/haidis/gluex/eta3pi_trees/data2020/ds_tree/PiPiGG_Tree_073266.root"
-FILE_SIZE="29g"
+FILE_SIZE="28g"
 
 # Pre-copied DAOS location: daos://iobench/root-cp/test.root
 # [xmei@ebpf2203 ~]$ daos fs scan iobench root-cp
@@ -39,7 +39,6 @@ mkdir -p "${OUTPUT_DIR}"
 FIO_COMMON=(
     --name=seq_read
     --rw=read
-    --bs=4m
     --numjobs=1
     --iodepth=32
     --group_reporting=1
