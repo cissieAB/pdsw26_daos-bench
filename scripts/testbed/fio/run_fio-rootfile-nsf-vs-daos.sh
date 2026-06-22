@@ -93,7 +93,7 @@ else
     echo "=== [1/2] DAOS DFS seq_read (pool=${POOL}, cont=${CONT}, file=${DAOS_FILE}) ==="
     for BS in "${BS_LIST[@]}"; do
         for RUN in $(seq 1 10); do
-            OUT_DAOS="${OUTPUT_DIR}/daos_seq_read_bs${BS}_nj1_iod32_dfs_$(date +%s).json"
+            OUT_DAOS="${OUTPUT_DIR}/dfs_seq_read_bs${BS}_nj1_iod32_dfs_$(date +%s).json"
             echo "--- DAOS DFS bs=${BS} run=${RUN}/10 ---"
             "${FIO_DFS}" \
                 "${FIO_COMMON[@]}" \
