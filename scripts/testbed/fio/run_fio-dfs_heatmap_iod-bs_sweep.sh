@@ -128,6 +128,3 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
 done
 
 echo "Done. Results written to ${OUTPUT_DIR}/"
-
-# Remove stray fio data files left in the working directory
-rm -f ./*.0.0

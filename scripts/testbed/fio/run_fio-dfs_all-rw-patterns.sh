@@ -8,7 +8,7 @@ set -euox pipefail
 # ---------------------------------------------------------------------------
 # 0. Locate fio and verify version / DFS engine support
 # ---------------------------------------------------------------------------
-FIO_BIN_PATH="${HOME}/local/bin/fio"
+FIO_BIN_PATH="/home/xmei/local/bin/fio"
 
 if [[ ! -x "${FIO_BIN_PATH}" ]]; then
     echo "ERROR: fio not found or not executable at ${FIO_BIN_PATH}" >&2
@@ -50,7 +50,7 @@ cleanup() {
 trap cleanup EXIT
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-all-rw-patterns}"
-OUTPUT_DIR=../../../results/testbed/fio-dfs-all-patterns
+OUTPUT_DIR=../../../results/testbed/fio-dfs-all-rw-patterns
 TIMESTAMP=$(date +%s)
 
 NUMJOBS=16
