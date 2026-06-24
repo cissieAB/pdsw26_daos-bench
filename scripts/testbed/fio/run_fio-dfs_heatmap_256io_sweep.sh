@@ -114,6 +114,3 @@ for run_id in "${!NUMJOBS_LIST[@]}"; do
 done
 
 echo "Done. Results written to ${OUTPUT_DIR}/"
-
-# Clean fio files
-rm *.0.0
