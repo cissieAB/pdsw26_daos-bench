@@ -132,7 +132,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
             --direct=1 \
             --buffered=0 \
             --group_reporting=1 \
-            --output="${OUTPUT_DIR}/fio_${label}_$(date +%s).json" \
+            --output="${OUTPUT_DIR}/fio_${label}.json" \
             --output-format=json
 
         # Destroy container
