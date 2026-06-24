@@ -49,11 +49,10 @@ RUNTIME=60                                  # seconds per test run
 
 IODEPTH_LIST=("4" "8" "16" "32" "64" "128" "256")
 # BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
-BLOCK_SIZE_LIST=("16k" "1m")
+BLOCK_SIZE_LIST=("4k" "4m")
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-heatmap}"
-OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-iod-bs-sweep-seqread
-TIMESTAMP=$(date +%s)
+OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-iod-bs-sweep
 
 mkdir -p "${OUTPUT_DIR}"
 
@@ -74,7 +73,7 @@ trap cleanup EXIT
 for bs in "${BLOCK_SIZE_LIST[@]}"; do
     for iod in "${IODEPTH_LIST[@]}"; do
 
-        label="${PATTERN}_bs${bs}_nj${NUMJOBS}_iod${iod}_${TIMESTAMP}"
+        label="${PATTERN}_bs${bs}_nj${NUMJOBS}_iod${iod}_$(date +%s)"
         CONT="${CONT_BASE}_${label}"
 
         echo "========================================================"
@@ -123,6 +122,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
             --pool="${POOL}" \
             --cont="${CURRENT_CONT}" \
             --rw=read \
+            --size=4g \
             --bs="${bs}" \
             --numjobs="${NUMJOBS}" \
             --iodepth="${iod}" \
@@ -132,7 +132,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
             --direct=1 \
             --buffered=0 \
             --group_reporting=1 \
-            --output="${OUTPUT_DIR}/fio_${label}.json" \
+            --output="${OUTPUT_DIR}/fio_${label}_$(date +%s).json" \
             --output-format=json
 
         # Destroy container
