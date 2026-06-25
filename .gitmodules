@@ -1,0 +1,3 @@
+[submodule "daos-benchmarking"]
+	path = daos-benchmarking
+	url = https://github.com/gummyhz/daos-benchmarking.git
