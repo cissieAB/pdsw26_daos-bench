@@ -1,17 +1,22 @@
 #!/usr/bin/bash
 
-# Heatmap sweep: single fio job with DFS engine, varying iodepth x block size.
-# iodepth : 4 8 16 32 64 128 256
+# Heatmap sweep: single fio job with DFS engine, varying numjobs x block size.
+# numjobs : 4 8 16 32 64
 # bs      : 4k 16k 1m 2m 4m
-# Each (bs, iod) pair gets a fresh POSIX container created before and destroyed after.
+# Each (bs, nj) pair gets a fresh POSIX container created before and destroyed after.
 # Time-based, 60 s per run.
+#
+# Usage: ./<this-script>.sh [N_REPEATS]
+#   N_REPEATS  number of full sweeps (default: 1)
 
 set -euox pipefail
+
+N_REPEATS="${1:-1}"
 
 # ---------------------------------------------------------------------------
 # 0. Locate fio and verify version / DFS engine support
 # ---------------------------------------------------------------------------
-FIO_BIN_PATH="${HOME}/local/bin/fio"
+FIO_BIN_PATH="/home/xmei/local/bin/fio"
 
 if [[ ! -x "${FIO_BIN_PATH}" ]]; then
     echo "ERROR: fio not found or not executable at ${FIO_BIN_PATH}" >&2
@@ -51,7 +56,6 @@ BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-heatmap}"
 OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-nj-bs-sweep
-TIMESTAMP=$(date +%s)
 
 mkdir -p "${OUTPUT_DIR}"
 
@@ -67,12 +71,15 @@ cleanup() {
 trap cleanup EXIT
 
 # ---------------------------------------------------------------------------
-# 4. Run sweep
+# 4. Run sweep (repeated N_REPEATS times)
 # ---------------------------------------------------------------------------
+for repeat in $(seq 1 "${N_REPEATS}"); do
+echo "######## Sweep ${repeat}/${N_REPEATS} started: $(date) ########"
+
 for bs in "${BLOCK_SIZE_LIST[@]}"; do
     for nj in "${NUMJOB_LIST[@]}"; do
 
-        label="${PATTERN}_bs${bs}_nj${nj}_iod${IODEPTH}_${TIMESTAMP}"
+        label="${PATTERN}_bs${bs}_nj${nj}_iod${IODEPTH}_$(date +%s)"
         CONT="${CONT_BASE}_${label}"
 
         echo "========================================================"
@@ -125,6 +132,9 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
         sleep 5
 
     done
+done
+
+echo "######## Sweep ${repeat}/${N_REPEATS} finished: $(date) ########"
 done
 
 echo "Done. Results written to ${OUTPUT_DIR}/"

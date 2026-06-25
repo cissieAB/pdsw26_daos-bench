@@ -7,7 +7,7 @@
 # Each (bs, iod) pair gets a fresh POSIX container created, prefilled, then destroyed after.
 # Time-based, 60 s per run.
 #
-# Usage: ./script.sh [N_REPEATS]
+# Usage: ./<this-script>.sh [N_REPEATS]
 #   N_REPEATS  number of full sweeps (default: 1)
 
 set -euox pipefail

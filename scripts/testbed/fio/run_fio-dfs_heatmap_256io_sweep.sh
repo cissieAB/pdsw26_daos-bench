@@ -2,13 +2,18 @@
 
 # This script runs a sweep of fio tests using the DAOS DFS engine, varying
 #  numjobs and iodepth together to keep total queue depth constant at 256.
+#
+# Usage: ./<this-script>.sh [N_REPEATS]
+#   N_REPEATS  number of full sweeps (default: 1)
 
 set -euox pipefail
+
+N_REPEATS="${1:-1}"
 
 # ---------------------------------------------------------------------------
 # 0. Locate fio and verify version / DFS engine support
 # ---------------------------------------------------------------------------
-FIO_BIN_PATH="${HOME}/local/bin/fio"
+FIO_BIN_PATH="/home/xmei/local/bin/fio"
 
 if [[ ! -x "${FIO_BIN_PATH}" ]]; then
     echo "ERROR: fio not found or not executable at ${FIO_BIN_PATH}" >&2
@@ -52,19 +57,21 @@ trap cleanup EXIT
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-bs1m}"       # DAOS container name
 OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-256io-sweep   # base output directory for results
-TIMESTAMP=$(date +%s)
 
 # fio parameter list
 NUMJOBS_LIST=("4" "8" "16" "32" "64")                     # number of fio jobs
 IODEPTH_LIST=("64" "32" "16" "8" "4")                     # io depth per job
 BLOCK_SIZE="1M"                                         # block size for all tests
 
+for repeat in $(seq 1 "${N_REPEATS}"); do
+echo "######## Sweep ${repeat}/${N_REPEATS} started: $(date) ########"
+
 for run_id in "${!NUMJOBS_LIST[@]}"; do
     nj=${NUMJOBS_LIST[$run_id]}
     iod=${IODEPTH_LIST[$run_id]}
 
     bs="${BLOCK_SIZE}"
-    label="bs${bs}_nj${nj}_iod${iod}_${TIMESTAMP}"
+    label="bs${bs}_nj${nj}_iod${iod}_$(date +%s)"
     CONT="${CONT_BASE}_${label}"
 
     mkdir -p "${OUTPUT_DIR}"
@@ -111,6 +118,9 @@ for run_id in "${!NUMJOBS_LIST[@]}"; do
 
     sleep 5
 
+done
+
+echo "######## Sweep ${repeat}/${N_REPEATS} finished: $(date) ########"
 done
 
 echo "Done. Results written to ${OUTPUT_DIR}/"

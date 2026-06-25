@@ -2,7 +2,8 @@
 # Sequential-read benchmark of a single ROOT file on DAOS DFS then on Network File System (NSF) over 100 GbE.
 # bs iterates over: 4k 4m 1m; numjobs=1, iodepth=32, reads full 29 GiB file once
 #
-# Usage: bash run_fio-rootfile-nsf-vs-daos.sh [--skip-daos]
+# Usage: bash run_fio-rootfile-nsf-vs-daos.sh [N_REPEATS] [--skip-daos]
+#   N_REPEATS  number of runs per (bs, engine) combination (default: 1)
 
 set -euox pipefail
 
@@ -10,10 +11,12 @@ set -euox pipefail
 # Argument parsing
 # ---------------------------------------------------------------------------
 SKIP_DAOS=false
+N_REPEATS=1
 for _arg in "$@"; do
     case "${_arg}" in
         --skip-daos) SKIP_DAOS=true ;;
-        *) echo "Unknown argument: ${_arg}" >&2; exit 1 ;;
+        ''|*[!0-9]*) echo "Unknown argument: ${_arg}" >&2; exit 1 ;;
+        *) N_REPEATS="${_arg}" ;;
     esac
 done
 
@@ -92,9 +95,9 @@ if [[ "${SKIP_DAOS}" == true ]]; then
 else
     echo "=== [1/2] DAOS DFS seq_read (pool=${POOL}, cont=${CONT}, file=${DAOS_FILE}) ==="
     for BS in "${BS_LIST[@]}"; do
-        for RUN in $(seq 1 10); do
+        for RUN in $(seq 1 "${N_REPEATS}"); do
             OUT_DAOS="${OUTPUT_DIR}/dfs_seq_read_bs${BS}_nj1_iod32_dfs_$(date +%s).json"
-            echo "--- DAOS DFS bs=${BS} run=${RUN}/10 ---"
+            echo "--- DAOS DFS bs=${BS} run=${RUN}/${N_REPEATS} ---"
             "${FIO_DFS}" \
                 "${FIO_COMMON[@]}" \
                 --bs="${BS}" \
@@ -112,7 +115,7 @@ fi
 echo
 
 # ---------------------------------------------------------------------------
-# 2. NSF: read the file directly — iterate over engines, 10 runs each
+# 2. NSF: read the file directly — iterate over engines, N_REPEATS runs each
 # ---------------------------------------------------------------------------
 
 # ---------------------------------------------------------------------------
@@ -150,9 +153,9 @@ echo "=== [2/2] NSF seq_read ==="
 
 for BS in "${RUN_BS[@]}"; do
     for ENGINE in "${RUN_ENGINES[@]}"; do
-        for RUN in $(seq 1 10); do
+        for RUN in $(seq 1 "${N_REPEATS}"); do
             OUT_NSF="${OUTPUT_DIR}/${ENGINE}_nsf_seq_read_bs${BS}_nj1_iod32_$(date +%s).json"
-            echo "--- NSF bs=${BS} engine=${ENGINE} run=${RUN}/10 ---"
+            echo "--- NSF bs=${BS} engine=${ENGINE} run=${RUN}/${N_REPEATS} ---"
             "${FIO_NSF}" \
                 "${FIO_COMMON[@]}" \
                 --bs="${BS}" \

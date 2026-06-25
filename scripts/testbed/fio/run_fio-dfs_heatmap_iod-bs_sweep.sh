@@ -5,13 +5,18 @@
 # bs      : 4k 16k 1m 2m 4m
 # Each (bs, iod) pair gets a fresh POSIX container created before and destroyed after.
 # Time-based, 60 s per run.
+#
+# Usage: ./<this-script>.sh [N_REPEATS]
+#   N_REPEATS  number of full sweeps (default: 1)
 
 set -euox pipefail
+
+N_REPEATS="${1:-1}"
 
 # ---------------------------------------------------------------------------
 # 0. Locate fio and verify version / DFS engine support
 # ---------------------------------------------------------------------------
-FIO_BIN_PATH="${HOME}/local/bin/fio"
+FIO_BIN_PATH="/home/xmei/local/bin/fio"
 
 if [[ ! -x "${FIO_BIN_PATH}" ]]; then
     echo "ERROR: fio not found or not executable at ${FIO_BIN_PATH}" >&2
@@ -66,64 +71,70 @@ cleanup() {
 trap cleanup EXIT
 
 # ---------------------------------------------------------------------------
-# 4. Run sweep
+# 4. Run sweep (repeated N_REPEATS times)
 # ---------------------------------------------------------------------------
-for bs in "${BLOCK_SIZE_LIST[@]}"; do
-    for iod in "${IODEPTH_LIST[@]}"; do
+for repeat in $(seq 1 "${N_REPEATS}"); do
+echo "######## Sweep ${repeat}/${N_REPEATS} started: $(date) ########"
 
-        label="${PATTERN}_bs${bs}_nj${NUMJOBS}_iod${iod}_$(date +%s)"
-        CONT="${CONT_BASE}_${label}"
+    for bs in "${BLOCK_SIZE_LIST[@]}"; do
+        for iod in "${IODEPTH_LIST[@]}"; do
 
-        echo "========================================================"
-        echo "  bs=${bs}  iodepth=${iod}  numjobs=${NUMJOBS}  pattern=${PATTERN}"
-        echo "  container: ${CONT}"
-        echo "========================================================"
+            label="${PATTERN}_bs${bs}_nj${NUMJOBS}_iod${iod}_$(date +%s)"
+            CONT="${CONT_BASE}_${label}"
 
-        # Create a fresh POSIX container
-        daos container create --type=POSIX "${POOL}" "${CONT}" &>/dev/null || {
-            echo "ERROR: failed to create container ${CONT}" >&2
-            exit 1
-        }
-        CURRENT_CONT="${CONT}"
+            echo "========================================================"
+            echo "  bs=${bs}  iodepth=${iod}  numjobs=${NUMJOBS}  pattern=${PATTERN}"
+            echo "  container: ${CONT}"
+            echo "========================================================"
 
-        echo "###### Container properties:"
-        daos cont getprop "${POOL}" "${CURRENT_CONT}"
-        echo
+            # Create a fresh POSIX container
+            daos container create --type=POSIX "${POOL}" "${CONT}" &>/dev/null || {
+                echo "ERROR: failed to create container ${CONT}" >&2
+                exit 1
+            }
+            CURRENT_CONT="${CONT}"
 
-        echo "###### Container query:"
-        daos cont query "${POOL}" "${CURRENT_CONT}"
-        echo
+            echo "###### Container properties:"
+            daos cont getprop "${POOL}" "${CURRENT_CONT}"
+            echo
 
-        # Timed test run (rand_write creates its own data — no prefill needed)
-        "${FIO}" \
-            --name="${PATTERN}" \
-            --ioengine=dfs \
-            --pool="${POOL}" \
-            --cont="${CURRENT_CONT}" \
-            --rw=randwrite \
-            --bs="${bs}" \
-            --numjobs="${NUMJOBS}" \
-            --iodepth="${iod}" \
-            --size=4g \
-            --filename=fio_data \
-            --time_based=1 \
-            --runtime="${RUNTIME}" \
-            --direct=1 \
-            --buffered=0 \
-            --group_reporting=1 \
-            --randrepeat=0 \
-            --output="${OUTPUT_DIR}/fio_${label}.json" \
-            --output-format=json
+            echo "###### Container query:"
+            daos cont query "${POOL}" "${CURRENT_CONT}"
+            echo
 
-        # Destroy container
-        daos container destroy "${POOL}" "${CONT}" &>/dev/null || {
-            echo "ERROR: failed to destroy container ${CONT}" >&2
-        }
-        CURRENT_CONT=""
+            # Timed test run (rand_write creates its own data — no prefill needed)
+            "${FIO}" \
+                --name="${PATTERN}" \
+                --ioengine=dfs \
+                --pool="${POOL}" \
+                --cont="${CURRENT_CONT}" \
+                --rw=randwrite \
+                --bs="${bs}" \
+                --numjobs="${NUMJOBS}" \
+                --iodepth="${iod}" \
+                --size=4g \
+                --filename=fio_data \
+                --time_based=1 \
+                --runtime="${RUNTIME}" \
+                --direct=1 \
+                --buffered=0 \
+                --group_reporting=1 \
+                --randrepeat=0 \
+                --output="${OUTPUT_DIR}/fio_${label}.json" \
+                --output-format=json
 
-        sleep 5
+            # Destroy container
+            daos container destroy "${POOL}" "${CONT}" &>/dev/null || {
+                echo "ERROR: failed to destroy container ${CONT}" >&2
+            }
+            CURRENT_CONT=""
 
+            sleep 5
+
+        done
     done
+
+echo "######## Sweep ${repeat}/${N_REPEATS} finished: $(date) ########"
 done
 
 echo "Done. Results written to ${OUTPUT_DIR}/"
