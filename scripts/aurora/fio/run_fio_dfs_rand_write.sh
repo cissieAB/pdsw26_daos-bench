@@ -1,8 +1,11 @@
 #!/usr/bin/bash
 
 # fio rand_write: DAOS POSIX container via native DFS engine
-# Runs 10 times; container is destroyed and recreated before each run.
+# Container is destroyed and recreated before each run.
 # numjobs=16, iodepth=16, runtime=60 s
+#
+# Usage: ./<this-script>.sh [N_REPEATS]
+#   N_REPEATS  number of runs (default: 1)
 #
 # Env overrides:
 #   DAOS_POOL_NAME   (default: e2sar)
@@ -35,7 +38,7 @@ BS="${FIO_BS:-1m}"
 RUNTIME=60
 SIZE="2g"
 FIO_FILE="fio_data"
-NRUNS=10
+NRUNS="${1:-10}"
 
 OUTPUT_DIR=../../../results/aurora/fio/3engines-rand_write
 mkdir -p "${OUTPUT_DIR}"

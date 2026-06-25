@@ -4,6 +4,9 @@
 # Loops over ioengines: libaio, psync, pvsync2
 # numjobs=16, iodepth=16, runtime=60 s
 #
+# Usage: ./<this-script>.sh [N_REPEATS]
+#   N_REPEATS  number of runs per engine (default: 10)
+#
 # Env overrides:
 #   DAOS_POOL_NAME   (default: e2sar)
 #   DAOS_CONT_NAME   (default: fio_dfuse)
@@ -106,7 +109,7 @@ mount | grep dfuse
 # ---------------------------------------------------------------------------
 # 4. Loop over engines x 10 runs each
 # ---------------------------------------------------------------------------
-NRUNS=10
+NRUNS="${1:-10}"
 
 for FIOENGINE in "${ENGINES[@]}"; do
     for (( RUN=1; RUN<=NRUNS; RUN++ )); do
