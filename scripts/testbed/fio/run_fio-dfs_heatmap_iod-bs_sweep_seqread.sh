@@ -6,8 +6,13 @@
 # bs      : 4k 16k 1m 2m 4m
 # Each (bs, iod) pair gets a fresh POSIX container created, prefilled, then destroyed after.
 # Time-based, 60 s per run.
+#
+# Usage: ./script.sh [N_REPEATS]
+#   N_REPEATS  number of full sweeps (default: 1)
 
 set -euox pipefail
+
+N_REPEATS="${1:-1}"
 
 # ---------------------------------------------------------------------------
 # 0. Locate fio and verify version / DFS engine support
@@ -48,8 +53,7 @@ PATTERN="seq_read"
 RUNTIME=60                                  # seconds per test run
 
 IODEPTH_LIST=("4" "8" "16" "32" "64" "128" "256")
-# BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
-BLOCK_SIZE_LIST=("4k" "4m")
+BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-heatmap}"
 OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-iod-bs-sweep
@@ -68,8 +72,11 @@ cleanup() {
 trap cleanup EXIT
 
 # ---------------------------------------------------------------------------
-# 4. Run sweep
+# 4. Run sweep (repeated N_REPEATS times)
 # ---------------------------------------------------------------------------
+for repeat in $(seq 1 "${N_REPEATS}"); do
+echo "######## Sweep ${repeat}/${N_REPEATS} started: $(date) ########"
+
 for bs in "${BLOCK_SIZE_LIST[@]}"; do
     for iod in "${IODEPTH_LIST[@]}"; do
 
@@ -144,6 +151,9 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
         sleep 5
 
     done
+done
+
+echo "######## Sweep ${repeat}/${N_REPEATS} finished: $(date) ########"
 done
 
 echo "Done. Results written to ${OUTPUT_DIR}/"

@@ -51,7 +51,6 @@ BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-heatmap}"
 OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-iod-bs-sweep
-TIMESTAMP=$(date +%s)
 
 mkdir -p "${OUTPUT_DIR}"
 
@@ -72,7 +71,7 @@ trap cleanup EXIT
 for bs in "${BLOCK_SIZE_LIST[@]}"; do
     for iod in "${IODEPTH_LIST[@]}"; do
 
-        label="${PATTERN}_bs${bs}_nj${NUMJOBS}_iod${iod}_${TIMESTAMP}"
+        label="${PATTERN}_bs${bs}_nj${NUMJOBS}_iod${iod}_$(date +%s)"
         CONT="${CONT_BASE}_${label}"
 
         echo "========================================================"
