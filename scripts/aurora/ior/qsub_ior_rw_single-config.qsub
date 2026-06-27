@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Usage: qsub -q debug-scaling -l select=<N>:ncpus=208 -v PPN=48,ITER=2 <this-script>.qsub
-# N is set via -l select=N; PPN defaults to 48, ITER defaults to 2
+# Usage example: qsub -q debug-scaling -l select=<N>:ncpus=208 -v PPN=48,NITER=2,TX_SIZE=16M <this-script>.qsub
+# N is set via -l select=N; PPN defaults to 48, ITER defaults to 2, TX_SIZE defaults to 16M
 
 #PBS -l walltime=00:59:00
 #PBS -A e2sar-daos
@@ -17,11 +17,12 @@ module load daos || { echo "Failed to load DAOS module"; exit 1; }
 POOL_NAME=e2sar
 PPN=${PPN:-48}
 ITER=${ITER:-2}
+TX_SIZE=${TX_SIZE:-16M}
 
 NNODES=$(wc -l < $PBS_NODEFILE)
 HOSTNAMES=$(cat $PBS_NODEFILE | tr '\n' ',')
 echo "Nodes (${NNODES}): ${HOSTNAMES}"
-echo "PPN: ${PPN}, ITER: ${ITER}"
+echo "PPN: ${PPN}, ITER: ${ITER}, TX_SIZE: ${TX_SIZE}"
 
 START_TIME=$SECONDS
 
@@ -84,25 +85,17 @@ LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE}
                                             -b 64M -t 16M
 
 
-# different transfer sizes.
-IOR_TX_SIZES=("2M" "16M")
-
 RESULTS_DIR="../../../results/aurora/ior/ior-rw"
 mkdir -p $RESULTS_DIR
 
-
-for tx_size in "${IOR_TX_SIZES[@]}"; do
-
-    echo -e "\nRunning IOR read-write with transfer size: $tx_size, RANKS_PER_NODE: ${RANKS_PER_NODE}, total ranks: $NRANKS"
-    LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
-                                                --no-vni -genvall -- \
-                                                ior -a DFS -w -r \
-                                                --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
-                                                -o /ior-rw-tx_${tx_size}-ppn_${RANKS_PER_NODE} \
-                                                -s ${RANKS_PER_NODE} -b 128M -t ${tx_size} -i ${ITER} \
-                                                -O summaryFile=${RESULTS_DIR}/ior_rw_n-${NNODES}_ppn-${RANKS_PER_NODE}_tx-${tx_size}_$(date +%s).csv -O summaryFormat=CSV
-    sleep 5
-done
+echo -e "\nRunning IOR read-write with transfer size: $TX_SIZE, RANKS_PER_NODE: ${RANKS_PER_NODE}, total ranks: $NRANKS"
+LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
+                                            --no-vni -genvall -- \
+                                            ior -a DFS -w -r \
+                                            --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
+                                            -o /ior-rw-tx_${TX_SIZE}-ppn_${RANKS_PER_NODE} \
+                                            -s ${RANKS_PER_NODE} -b 128M -t ${TX_SIZE} -i ${ITER} \
+                                            -O summaryFile=${RESULTS_DIR}/ior_rw_n-${NNODES}_ppn-${RANKS_PER_NODE}_tx-${TX_SIZE}_$(date +%s).csv -O summaryFormat=CSV
 
 
 # Destroy container
