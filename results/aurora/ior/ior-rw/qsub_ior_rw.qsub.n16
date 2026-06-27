@@ -1,0 +1,63 @@
+Nodes (16): x4304c6s6b0n0.hsn.cm.aurora.alcf.anl.gov,x4311c3s4b0n0.hsn.cm.aurora.alcf.anl.gov,x4311c6s7b0n0.hsn.cm.aurora.alcf.anl.gov,x4320c5s0b0n0.hsn.cm.aurora.alcf.anl.gov,x4320c6s1b0n0.hsn.cm.aurora.alcf.anl.gov,x4602c0s2b0n0.hsn.cm.aurora.alcf.anl.gov,x4618c3s4b0n0.hsn.cm.aurora.alcf.anl.gov,x4708c2s2b0n0.hsn.cm.aurora.alcf.anl.gov,x4712c1s0b0n0.hsn.cm.aurora.alcf.anl.gov,x4413c7s1b0n0.hsn.cm.aurora.alcf.anl.gov,x4419c7s2b0n0.hsn.cm.aurora.alcf.anl.gov,x4506c0s3b0n0.hsn.cm.aurora.alcf.anl.gov,x4110c4s3b0n0.hsn.cm.aurora.alcf.anl.gov,x4115c5s4b0n0.hsn.cm.aurora.alcf.anl.gov,x4116c0s5b0n0.hsn.cm.aurora.alcf.anl.gov,x4202c1s1b0n0.hsn.cm.aurora.alcf.anl.gov,
+Running IOR write test
+Container xmei-ior_n16 does not exist, will create a new one.
+Successfully created container e00eda87-33d6-45e5-8d71-9abbcd1604de
+  Container UUID : e00eda87-33d6-45e5-8d71-9abbcd1604de
+  Container Label: xmei-ior_n16                        
+  Container Type : POSIX                               
+
+Get container properties:
+Properties for container xmei-ior_n16
+Name                                             Value                               
+----                                             -----                               
+Highest Allocated OID (alloc_oid)                0                                   
+Checksum (cksum)                                 off                                 
+Checksum Chunk Size (cksum_size)                 32 KiB                              
+Compression (compression)                        off                                 
+Deduplication (dedup)                            off                                 
+Dedupe Threshold (dedup_threshold)               4.0 KiB                             
+EC Cell Size (ec_cell_sz)                        64 KiB                              
+Performance domain affinity level of EC (ec_pda) 1                                   
+Encryption (encryption)                          off                                 
+Global Version (global_version)                  3                                   
+Group (group)                                    users@                              
+Label (label)                                    xmei-ior_n16                        
+Layout Type (layout_type)                        POSIX (1)                           
+Layout Version (layout_version)                  1                                   
+Max Snapshot (max_snapshot)                      0                                   
+Object Version (obj_version)                     2                                   
+Owner (owner)                                    xmei@                               
+Performance domain level (perf_domain)           root (255)                          
+Redundancy Factor (rd_fac)                       rd_fac0                             
+Redundancy Level (rd_lvl)                        node (2)                            
+Performance domain affinity level of RP (rp_pda) 4294967295                          
+Server Checksumming (srv_cksum)                  off                                 
+Health (status)                                  HEALTHY                             
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT 
+Invalid -n/--np value -ppn: trailing characters
+
+Running IOR read-write with transfer size: 2M, RANKS_PER_NODE: 8, total ranks: 128
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-16_ppn-8_tx-2M_1782531582.csv
+
+Running IOR read-write with transfer size: 16M, RANKS_PER_NODE: 8, total ranks: 128
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-16_ppn-8_tx-16M_1782531598.csv
+
+Running IOR read-write with transfer size: 2M, RANKS_PER_NODE: 16, total ranks: 256
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-16_ppn-16_tx-2M_1782531607.csv
+
+Running IOR read-write with transfer size: 16M, RANKS_PER_NODE: 16, total ranks: 256
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-16_ppn-16_tx-16M_1782531633.csv
+
+Running IOR read-write with transfer size: 2M, RANKS_PER_NODE: 32, total ranks: 512
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-16_ppn-32_tx-2M_1782531647.csv
+
+Running IOR read-write with transfer size: 16M, RANKS_PER_NODE: 32, total ranks: 512
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-16_ppn-32_tx-16M_1782531693.csv
+
+Running IOR read-write with transfer size: 2M, RANKS_PER_NODE: 48, total ranks: 768
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-16_ppn-48_tx-2M_1782531724.csv
+
+Running IOR read-write with transfer size: 16M, RANKS_PER_NODE: 48, total ranks: 768
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-16_ppn-48_tx-16M_1782531799.csv
+Successfully destroyed container xmei-ior_n16
+Completed script in 278 seconds
