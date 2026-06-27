@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Run this file with "qsub -q <queue_name> -l select=<node_number>:ncpus=208 <this-script>.qsub"
+# Run this file with "qsub -q <queue_name> -l select=<node_number>:ncpus=208 -v NITER=<> <this-script>.qsub"
 
 #PBS -l walltime=00:59:00
 #PBS -A e2sar-daos
