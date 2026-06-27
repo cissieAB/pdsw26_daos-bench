@@ -41,7 +41,7 @@ module load daos || { echo "ERROR: Failed to load DAOS module" >&2; exit 1; }
 # 0. Config
 # ---------------------------------------------------------------------------
 FIO="${HOME}/local/bin/fio"
-ENGINES=(libaio psync pvsync2)
+ENGINES=(libaio pvsync2)
 
 POOL="${DAOS_POOL_NAME:-e2sar}"
 CONT="${DAOS_CONT_NAME:-fio_libil}"
