@@ -4,7 +4,7 @@
 
 #PBS -l walltime=00:59:00
 #PBS -A e2sar-daos
-#PBS -q debug-scaling
+#PBS -q capacity
 #PBS -l filesystems=home:flare:daos_user_fs
 #PBS -j oe
 
