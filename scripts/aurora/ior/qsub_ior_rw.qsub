@@ -12,6 +12,7 @@ module use /soft/modulefiles/ || { echo "Failed to use modulefiles"; exit 1; }
 module load daos || { echo "Failed to load DAOS module"; exit 1; }
 
 # Variables
+NITER=${NITER:-10}   # pass via: qsub -v NITER=<n>
 POOL_NAME=e2sar
 NNODES=`wc -l < $PBS_NODEFILE` # Number of nodes
 HOSTNAMES=$(cat $PBS_NODEFILE | tr '\n' ',')
@@ -45,38 +46,38 @@ echo "Running IOR write test"
 # -t: ior transfer size, size of transfer in bytes
 # -s: number of segments. Not applied here.
 
-# Create container with RD factor 1 (default is 3)
 CONTAINER_NAME="${USER}-ior_n${NNODES}"
-# Check if container exists
-if daos cont query "$POOL_NAME" "$CONTAINER_NAME" >/dev/null 2>&1; then
-    echo "Container $CONTAINER_NAME already exists, destroying it..."
-    if ! daos container destroy "$POOL_NAME" "$CONTAINER_NAME"; then
-        echo "Failed to destroy container $CONTAINER_NAME"
-        exit 1
+
+create_container() {
+    if daos cont query "$POOL_NAME" "$CONTAINER_NAME" >/dev/null 2>&1; then
+        echo "Container $CONTAINER_NAME already exists, destroying it..."
+        daos container destroy "$POOL_NAME" "$CONTAINER_NAME" || { echo "Failed to destroy container $CONTAINER_NAME"; exit 1; }
     fi
-else
-    echo "Container $CONTAINER_NAME does not exist, will create a new one."
-fi
-# Create container
-if ! daos container create --type=POSIX "$POOL_NAME" "$CONTAINER_NAME" --properties=rd_fac:0; then
-    echo "Failed to create container $CONTAINER_NAME"
-    exit 1
-fi
-echo "Get container properties:"
-daos container get-prop $POOL_NAME $CONTAINER_NAME
+    daos container create --type=POSIX "$POOL_NAME" "$CONTAINER_NAME" --properties=rd_fac:0 \
+        || { echo "Failed to create container $CONTAINER_NAME"; exit 1; }
+    echo "Container $CONTAINER_NAME created."
+    daos container get-prop "$POOL_NAME" "$CONTAINER_NAME"
+}
+
+destroy_container() {
+    daos cont destroy "$POOL_NAME" "$CONTAINER_NAME" || echo "Failed to destroy container $CONTAINER_NAME"
+}
 
 
 # IOR smoke test
+create_container
 LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
                                             --no-vni -genvall -- \
                                             ior -a DFS -w -r \
                                             --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
                                             -o /ior-smoke \
                                             -b 64M -t 16M
+destroy_container
 
 
 # different transfer sizes.
 IOR_TX_SIZES=("2M" "16M")
+NSEGMENTS=32
 
 RESULTS_DIR="../../../results/aurora/ior/ior-rw"
 mkdir -p $RESULTS_DIR
@@ -84,23 +85,21 @@ mkdir -p $RESULTS_DIR
 
 for RANKS_PER_NODE in 8 16 32 48; do
     NRANKS=$(( NNODES * RANKS_PER_NODE ))
-    for tx_size in "${IOR_TX_SIZES[@]}"; do  
+    for tx_size in "${IOR_TX_SIZES[@]}"; do
         echo -e "\nRunning IOR read-write with transfer size: $tx_size, RANKS_PER_NODE: ${RANKS_PER_NODE}, total ranks: $NRANKS"
+        create_container
         mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
-         -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
                                                     --no-vni -genvall -- \
                                                     ior -a DFS -w -r \
                                                     --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
                                                     -o /ior-rw-tx_${tx_size}-ppn_${RANKS_PER_NODE} \
-                                                    -s 32 -b 128M -t ${tx_size} -i 10 \
+                                                    -s ${NSEGMENTS} -b 128M -t ${tx_size} -i ${NITER} \
                                                     -O summaryFile=${RESULTS_DIR}/ior_rw_n-${NNODES}_ppn-${RANKS_PER_NODE}_tx-${tx_size}_$(date +%s).csv -O summaryFormat=CSV
         sleep 5
+        destroy_container
     done
 done
 
-
-# Destroy container
-daos cont destroy $POOL_NAME $CONTAINER_NAME || echo "Failed to destroy container $CONTAINER_NAME"
 
 ELAPSED_TIME=$((SECONDS - START_TIME))
 echo "Completed script in $ELAPSED_TIME seconds"

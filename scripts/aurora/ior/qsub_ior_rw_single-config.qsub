@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: qsub -q debug-scaling -l select=<N>:ncpus=208 -v PPN=48,ITER=2 qsub_ior_rw_ppn48_iter2.qsub
+# Usage: qsub -q debug-scaling -l select=<N>:ncpus=208 -v PPN=48,ITER=2 <this-script>.qsub
 # N is set via -l select=N; PPN defaults to 48, ITER defaults to 2
 
 #PBS -l walltime=00:59:00
