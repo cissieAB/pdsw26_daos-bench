@@ -22,7 +22,7 @@ TX_SIZE=${TX_SIZE:-16M}
 NNODES=$(wc -l < $PBS_NODEFILE)
 HOSTNAMES=$(cat $PBS_NODEFILE | tr '\n' ',')
 echo "Nodes (${NNODES}): ${HOSTNAMES}"
-echo "PPN: ${PPN}, ITER: ${ITER}, TX_SIZE: ${TX_SIZE}"
+echo "PPN: ${PPN}, NITER: ${NITER}, TX_SIZE: ${TX_SIZE}"
 
 START_TIME=$SECONDS
 
