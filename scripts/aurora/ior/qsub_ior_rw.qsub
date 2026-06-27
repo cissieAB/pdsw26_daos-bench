@@ -4,7 +4,7 @@
 
 #PBS -l walltime=00:59:00
 #PBS -A e2sar-daos
-#PBS -q capacity
+#PBS -q debug-scaling
 #PBS -l filesystems=home:flare:daos_user_fs
 #PBS -j oe
 
@@ -88,7 +88,7 @@ for RANKS_PER_NODE in 8 16 32 48; do
     for tx_size in "${IOR_TX_SIZES[@]}"; do
         
         echo -e "\nRunning IOR read-write with transfer size: $tx_size, RANKS_PER_NODE: ${RANKS_PER_NODE}, total ranks: $NRANKS"
-        LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
+         -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
                                                     --no-vni -genvall -- \
                                                     ior -a DFS -w -r \
                                                     --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
