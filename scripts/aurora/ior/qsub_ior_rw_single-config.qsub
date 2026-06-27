@@ -1,6 +1,7 @@
 #!/bin/bash
 
-# Run this file with "qsub -l select=<node_number>:ncpus=208 <this-script>.qsub"
+# Usage: qsub -q debug-scaling -l select=<N>:ncpus=208 -v PPN=48,ITER=2 qsub_ior_rw_ppn48_iter2.qsub
+# N is set via -l select=N; PPN defaults to 48, ITER defaults to 2
 
 #PBS -l walltime=00:59:00
 #PBS -A e2sar-daos
@@ -14,9 +15,13 @@ module load daos || { echo "Failed to load DAOS module"; exit 1; }
 
 # Variables
 POOL_NAME=e2sar
-NNODES=`wc -l < $PBS_NODEFILE` # Number of nodes
+PPN=${PPN:-48}
+ITER=${ITER:-2}
+
+NNODES=$(wc -l < $PBS_NODEFILE)
 HOSTNAMES=$(cat $PBS_NODEFILE | tr '\n' ',')
 echo "Nodes (${NNODES}): ${HOSTNAMES}"
+echo "PPN: ${PPN}, ITER: ${ITER}"
 
 START_TIME=$SECONDS
 
@@ -37,7 +42,7 @@ export AFFINITY_ORDERING=compact
 # Add ior into path
 export PATH=$PATH:$HOME/ior/install/bin
 
-RANKS_PER_NODE=48
+RANKS_PER_NODE=${PPN}
 NRANKS=$(( NNODES * RANKS_PER_NODE ))
 
 echo "Running IOR write test"
@@ -94,7 +99,7 @@ for tx_size in "${IOR_TX_SIZES[@]}"; do
                                                 ior -a DFS -w -r \
                                                 --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
                                                 -o /ior-rw-tx_${tx_size}-ppn_${RANKS_PER_NODE} \
-                                                -s ${RANKS_PER_NODE} -b 128M -t ${tx_size} -i 2 \
+                                                -s ${RANKS_PER_NODE} -b 128M -t ${tx_size} -i ${ITER} \
                                                 -O summaryFile=${RESULTS_DIR}/ior_rw_n-${NNODES}_ppn-${RANKS_PER_NODE}_tx-${tx_size}_$(date +%s).csv -O summaryFormat=CSV
     sleep 5
 done
