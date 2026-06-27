@@ -1,0 +1,145 @@
+Nodes (4): x4310c4s0b0n0.hsn.cm.aurora.alcf.anl.gov,x4312c0s4b0n0.hsn.cm.aurora.alcf.anl.gov,x4400c7s0b0n0.hsn.cm.aurora.alcf.anl.gov,x4401c0s3b0n0.hsn.cm.aurora.alcf.anl.gov,
+PPN: 8, ITER: 10
+Running IOR write test
+Container xmei-ior_n4 does not exist, will create a new one.
+Successfully created container d1555184-0cc2-4075-840c-f46e84266417
+  Container UUID : d1555184-0cc2-4075-840c-f46e84266417
+  Container Label: xmei-ior_n4                         
+  Container Type : POSIX                               
+
+Get container properties:
+Properties for container xmei-ior_n4
+Name                                             Value                               
+----                                             -----                               
+Highest Allocated OID (alloc_oid)                0                                   
+Checksum (cksum)                                 off                                 
+Checksum Chunk Size (cksum_size)                 32 KiB                              
+Compression (compression)                        off                                 
+Deduplication (dedup)                            off                                 
+Dedupe Threshold (dedup_threshold)               4.0 KiB                             
+EC Cell Size (ec_cell_sz)                        64 KiB                              
+Performance domain affinity level of EC (ec_pda) 1                                   
+Encryption (encryption)                          off                                 
+Global Version (global_version)                  3                                   
+Group (group)                                    users@                              
+Label (label)                                    xmei-ior_n4                         
+Layout Type (layout_type)                        POSIX (1)                           
+Layout Version (layout_version)                  1                                   
+Max Snapshot (max_snapshot)                      0                                   
+Object Version (obj_version)                     2                                   
+Owner (owner)                                    xmei@                               
+Performance domain level (perf_domain)           root (255)                          
+Redundancy Factor (rd_fac)                       rd_fac0                             
+Redundancy Level (rd_lvl)                        node (2)                            
+Performance domain affinity level of RP (rp_pda) 4294967295                          
+Server Checksumming (srv_cksum)                  off                                 
+Health (status)                                  HEALTHY                             
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT 
+IOR-4.0.0: MPI Coordinated Test of Parallel I/O
+Began               : Sat Jun 27 11:08:40 2026
+Command line        : /home/xmei/ior/install/bin/ior -a DFS -w -r --dfs.pool e2sar --dfs.cont xmei-ior_n4 --dfs.chunk_size=2m -o /ior-smoke -b 64M -t 16M
+Machine             : Linux x4310c4s0b0n0
+TestID              : 0
+StartTime           : Sat Jun 27 11:08:41 2026
+Path                : /ior-smoke
+FS                  : 90.9 TiB   Used FS: 0.5%   Inodes: -0.0 Mi   Used Inodes: 0.0%
+
+Options: 
+api                 : DFS
+apiVersion          : DAOS
+test filename       : /ior-smoke
+access              : single-shared-file
+type                : independent
+segments            : 1
+ordering in a file  : sequential
+ordering inter file : no tasks offsets
+nodes               : 4
+tasks               : 32
+clients per node    : 8
+repetitions         : 1
+xfersize            : 16 MiB
+blocksize           : 64 MiB
+aggregate filesize  : 2 GiB
+
+Results: 
+
+access    bw(MiB/s)  IOPS       Latency(s)  block(KiB) xfer(KiB)  open(s)    wr/rd(s)   close(s)   total(s)   iter
+------    ---------  ----       ----------  ---------- ---------  --------   --------   --------   --------   ----
+write     123671     9912       0.002198    65536      16384      0.006968   0.012913   0.004169   0.016560   0   
+read      157417     13183      0.001632    65536      16384      0.006592   0.009710   0.003189   0.013010   0   
+
+Summary of all tests:
+Operation   Max(MiB)   Min(MiB)  Mean(MiB)     StdDev   Max(OPs)   Min(OPs)  Mean(OPs)     StdDev    Mean(s) Stonewall(s) Stonewall(MiB) Test# #Tasks tPN reps fPP reord reordoff reordrand seed segcnt   blksiz    xsize aggs(MiB)   API RefNum
+write      123670.92  123670.92  123670.92       0.00    7729.43    7729.43    7729.43       0.00    0.01656         NA            NA     0     32   8    1   0     0        1         0    0      1 67108864 16777216    2048.0 DFS      0
+read       157417.07  157417.07  157417.07       0.00    9838.57    9838.57    9838.57       0.00    0.01301         NA            NA     0     32   8    1   0     0        1         0    0      1 67108864 16777216    2048.0 DFS      0
+Finished            : Sat Jun 27 11:08:41 2026
+
+Running IOR read-write with transfer size: 2M, RANKS_PER_NODE: 8, total ranks: 32
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-2M_1782558521.csv
+
+Running IOR read-write with transfer size: 16M, RANKS_PER_NODE: 8, total ranks: 32
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Writing output to ../../../results/aurora/ior/ior-rw/ior_rw_n-4_ppn-8_tx-16M_1782558538.csv
+Successfully destroyed container xmei-ior_n4
+Completed script in 31 seconds
