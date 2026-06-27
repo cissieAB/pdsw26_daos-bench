@@ -16,7 +16,7 @@ module load daos || { echo "Failed to load DAOS module"; exit 1; }
 # Variables
 POOL_NAME=e2sar
 PPN=${PPN:-48}
-ITER=${ITER:-2}
+NITER=${NITER:-2}
 TX_SIZE=${TX_SIZE:-16M}
 
 NNODES=$(wc -l < $PBS_NODEFILE)
@@ -96,7 +96,7 @@ LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE}
                                             ior -a DFS -w -r \
                                             --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
                                             -o /ior-rw-tx_${TX_SIZE}-ppn_${RANKS_PER_NODE} \
-                                            -s ${NSEGMENTS} -b 128M -t ${TX_SIZE} -i ${ITER} \
+                                            -s ${NSEGMENTS} -b 128M -t ${TX_SIZE} -i ${NITER} \
                                             -O summaryFile=${RESULTS_DIR}/ior_rw_n-${NNODES}_ppn-${RANKS_PER_NODE}_tx-${TX_SIZE}_$(date +%s).csv -O summaryFormat=CSV
 
 
