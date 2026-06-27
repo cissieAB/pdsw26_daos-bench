@@ -88,13 +88,15 @@ LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE}
 RESULTS_DIR="../../../results/aurora/ior/ior-rw"
 mkdir -p $RESULTS_DIR
 
+NSEGMENTS=32
+
 echo -e "\nRunning IOR read-write with transfer size: $TX_SIZE, RANKS_PER_NODE: ${RANKS_PER_NODE}, total ranks: $NRANKS"
 LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
                                             --no-vni -genvall -- \
                                             ior -a DFS -w -r \
                                             --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
                                             -o /ior-rw-tx_${TX_SIZE}-ppn_${RANKS_PER_NODE} \
-                                            -s ${RANKS_PER_NODE} -b 128M -t ${TX_SIZE} -i ${ITER} \
+                                            -s ${NSEGMENTS} -b 128M -t ${TX_SIZE} -i ${ITER} \
                                             -O summaryFile=${RESULTS_DIR}/ior_rw_n-${NNODES}_ppn-${RANKS_PER_NODE}_tx-${TX_SIZE}_$(date +%s).csv -O summaryFormat=CSV
 
 
