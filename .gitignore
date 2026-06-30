@@ -7,3 +7,6 @@
 
 # Claude settings
 .claude
+
+# logs
+*/logs
