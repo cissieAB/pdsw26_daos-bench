@@ -2874,3 +2874,577 @@ Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:
 + echo
 
 + /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782831389 --bs=4m --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs4m_nj16_iod16_1782831389.json --output-format=json rw_pattern.fio
++ daos container destroy iobench fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782831389
++ CURRENT_CONT=
++ sleep 5
+++ date
++ echo '######## Sweep 8/10 finished: Tue Jun 30 11:07:04 AM EDT 2026 ########'
+######## Sweep 8/10 finished: Tue Jun 30 11:07:04 AM EDT 2026 ########
++ for repeat in $(seq 1 "${N_REPEATS}")
+++ date
++ echo '######## Sweep 9/10 started: Tue Jun 30 11:07:04 AM EDT 2026 ########'
+######## Sweep 9/10 started: Tue Jun 30 11:07:04 AM EDT 2026 ########
++ for bs in "${BLOCK_SIZE_LIST[@]}"
+++ date +%s
++ label=bs4k_nj16_iod16_1782832024
++ CONT=fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024
++ mkdir -p ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo 'DAOS container: fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024'
+DAOS container: fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024
++ echo 'fio parameters: numjobs=16, iodepth=16, bs=4k'
+fio parameters: numjobs=16, iodepth=16, bs=4k
++ echo 'Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns'
+Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo
+
++ daos container create --type=POSIX iobench fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024
++ CURRENT_CONT=fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024
++ echo '###### Container properties:'
+###### Container properties:
++ daos cont getprop iobench fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024
+Properties for container fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024
+Name                                             Value                                              
+----                                             -----                                              
+Highest Allocated OID (alloc_oid)                0                                                  
+Checksum (cksum)                                 off                                                
+Checksum Chunk Size (cksum_size)                 32 KiB                                             
+Compression (compression)                        off                                                
+Deduplication (dedup)                            off                                                
+Dedupe Threshold (dedup_threshold)               4.0 KiB                                            
+EC Cell Size (ec_cell_sz)                        64 KiB                                             
+Performance domain affinity level of EC (ec_pda) 1                                                  
+Encryption (encryption)                          off                                                
+Global Version (global_version)                  3                                                  
+Group (group)                                    itd@                                               
+Label (label)                                    fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024 
+Layout Type (layout_type)                        POSIX (1)                                          
+Layout Version (layout_version)                  1                                                  
+Max Snapshot (max_snapshot)                      0                                                  
+Object Version (obj_version)                     2                                                  
+Owner (owner)                                    xmei@                                              
+Performance domain level (perf_domain)           root (255)                                         
+Redundancy Factor (rd_fac)                       rd_fac0                                            
+Redundancy Level (rd_lvl)                        node (2)                                           
+Performance domain affinity level of RP (rp_pda) 4294967295                                         
+Server Checksumming (srv_cksum)                  off                                                
+Health (status)                                  HEALTHY                                            
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT                
++ echo
+
++ echo '###### Container query'
+###### Container query
++ daos cont query iobench fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024
+  Container UUID              : ab974bab-fa94-40cc-9ef5-f34e4b662f2c                        
+  Container Label             : fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024          
+  Container Type              : POSIX                                                       
+  Pool UUID                   : c31b01d3-50f4-4afd-9dbb-5c20b51e4f33                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x267f1aa7ef940000 (2026-06-30 11:07:05.25405184 -0400 EDT) 
+  Latest close/modify time    : 0x267f1aa7fddc0000 (2026-06-30 11:07:05.269026816 -0400 EDT)
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : UNKNOWN                                                     
+  File Object Class           : UNKNOWN                                                     
+  Chunk Size                  : 1.0 MiB                                                     
+
++ echo
+
++ /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024 --bs=4k --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs4k_nj16_iod16_1782832024.json --output-format=json rw_pattern.fio
++ daos container destroy iobench fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782832024
++ CURRENT_CONT=
++ sleep 5
++ for bs in "${BLOCK_SIZE_LIST[@]}"
+++ date +%s
++ label=bs16k_nj16_iod16_1782832705
++ CONT=fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705
++ mkdir -p ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo 'DAOS container: fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705'
+DAOS container: fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705
++ echo 'fio parameters: numjobs=16, iodepth=16, bs=16k'
+fio parameters: numjobs=16, iodepth=16, bs=16k
++ echo 'Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns'
+Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo
+
++ daos container create --type=POSIX iobench fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705
++ CURRENT_CONT=fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705
++ echo '###### Container properties:'
+###### Container properties:
++ daos cont getprop iobench fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705
+Properties for container fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705
+Name                                             Value                                               
+----                                             -----                                               
+Highest Allocated OID (alloc_oid)                0                                                   
+Checksum (cksum)                                 off                                                 
+Checksum Chunk Size (cksum_size)                 32 KiB                                              
+Compression (compression)                        off                                                 
+Deduplication (dedup)                            off                                                 
+Dedupe Threshold (dedup_threshold)               4.0 KiB                                             
+EC Cell Size (ec_cell_sz)                        64 KiB                                              
+Performance domain affinity level of EC (ec_pda) 1                                                   
+Encryption (encryption)                          off                                                 
+Global Version (global_version)                  3                                                   
+Group (group)                                    itd@                                                
+Label (label)                                    fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705 
+Layout Type (layout_type)                        POSIX (1)                                           
+Layout Version (layout_version)                  1                                                   
+Max Snapshot (max_snapshot)                      0                                                   
+Object Version (obj_version)                     2                                                   
+Owner (owner)                                    xmei@                                               
+Performance domain level (perf_domain)           root (255)                                          
+Redundancy Factor (rd_fac)                       rd_fac0                                             
+Redundancy Level (rd_lvl)                        node (2)                                            
+Performance domain affinity level of RP (rp_pda) 4294967295                                          
+Server Checksumming (srv_cksum)                  off                                                 
+Health (status)                                  HEALTHY                                             
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT                 
++ echo
+
++ echo '###### Container query'
+###### Container query
++ daos cont query iobench fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705
+  Container UUID              : 8f79e4ab-3a6d-4850-96dd-dc65449a53c1                        
+  Container Label             : fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705         
+  Container Type              : POSIX                                                       
+  Pool UUID                   : c31b01d3-50f4-4afd-9dbb-5c20b51e4f33                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x267f2491d8ac0000 (2026-06-30 11:18:26.519220224 -0400 EDT)
+  Latest close/modify time    : 0x267f2491e4d80000 (2026-06-30 11:18:26.53198336 -0400 EDT) 
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : UNKNOWN                                                     
+  File Object Class           : UNKNOWN                                                     
+  Chunk Size                  : 1.0 MiB                                                     
+
++ echo
+
++ /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705 --bs=16k --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs16k_nj16_iod16_1782832705.json --output-format=json rw_pattern.fio
++ daos container destroy iobench fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782832705
++ CURRENT_CONT=
++ sleep 5
++ for bs in "${BLOCK_SIZE_LIST[@]}"
+++ date +%s
++ label=bs1m_nj16_iod16_1782833359
++ CONT=fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359
++ mkdir -p ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo 'DAOS container: fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359'
+DAOS container: fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359
++ echo 'fio parameters: numjobs=16, iodepth=16, bs=1m'
+fio parameters: numjobs=16, iodepth=16, bs=1m
++ echo 'Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns'
+Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo
+
++ daos container create --type=POSIX iobench fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359
++ CURRENT_CONT=fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359
++ echo '###### Container properties:'
+###### Container properties:
++ daos cont getprop iobench fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359
+Properties for container fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359
+Name                                             Value                                              
+----                                             -----                                              
+Highest Allocated OID (alloc_oid)                0                                                  
+Checksum (cksum)                                 off                                                
+Checksum Chunk Size (cksum_size)                 32 KiB                                             
+Compression (compression)                        off                                                
+Deduplication (dedup)                            off                                                
+Dedupe Threshold (dedup_threshold)               4.0 KiB                                            
+EC Cell Size (ec_cell_sz)                        64 KiB                                             
+Performance domain affinity level of EC (ec_pda) 1                                                  
+Encryption (encryption)                          off                                                
+Global Version (global_version)                  3                                                  
+Group (group)                                    itd@                                               
+Label (label)                                    fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359 
+Layout Type (layout_type)                        POSIX (1)                                          
+Layout Version (layout_version)                  1                                                  
+Max Snapshot (max_snapshot)                      0                                                  
+Object Version (obj_version)                     2                                                  
+Owner (owner)                                    xmei@                                              
+Performance domain level (perf_domain)           root (255)                                         
+Redundancy Factor (rd_fac)                       rd_fac0                                            
+Redundancy Level (rd_lvl)                        node (2)                                           
+Performance domain affinity level of RP (rp_pda) 4294967295                                         
+Server Checksumming (srv_cksum)                  off                                                
+Health (status)                                  HEALTHY                                            
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT                
++ echo
+
++ echo '###### Container query'
+###### Container query
++ daos cont query iobench fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359
+  Container UUID              : 0b0ae385-e35f-46a1-a314-3470451a4247                        
+  Container Label             : fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359          
+  Container Type              : POSIX                                                       
+  Pool UUID                   : c31b01d3-50f4-4afd-9dbb-5c20b51e4f33                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x267f2e1507140000 (2026-06-30 11:29:20.208216064 -0400 EDT)
+  Latest close/modify time    : 0x267f2e1522f80000 (2026-06-30 11:29:20.237461504 -0400 EDT)
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : UNKNOWN                                                     
+  File Object Class           : UNKNOWN                                                     
+  Chunk Size                  : 1.0 MiB                                                     
+
++ echo
+
++ /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359 --bs=1m --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs1m_nj16_iod16_1782833359.json --output-format=json rw_pattern.fio
++ daos container destroy iobench fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782833359
++ CURRENT_CONT=
++ sleep 5
++ for bs in "${BLOCK_SIZE_LIST[@]}"
+++ date +%s
++ label=bs2m_nj16_iod16_1782833997
++ CONT=fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997
++ mkdir -p ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo 'DAOS container: fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997'
+DAOS container: fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997
++ echo 'fio parameters: numjobs=16, iodepth=16, bs=2m'
+fio parameters: numjobs=16, iodepth=16, bs=2m
++ echo 'Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns'
+Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo
+
++ daos container create --type=POSIX iobench fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997
++ CURRENT_CONT=fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997
++ echo '###### Container properties:'
+###### Container properties:
++ daos cont getprop iobench fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997
+Properties for container fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997
+Name                                             Value                                              
+----                                             -----                                              
+Highest Allocated OID (alloc_oid)                0                                                  
+Checksum (cksum)                                 off                                                
+Checksum Chunk Size (cksum_size)                 32 KiB                                             
+Compression (compression)                        off                                                
+Deduplication (dedup)                            off                                                
+Dedupe Threshold (dedup_threshold)               4.0 KiB                                            
+EC Cell Size (ec_cell_sz)                        64 KiB                                             
+Performance domain affinity level of EC (ec_pda) 1                                                  
+Encryption (encryption)                          off                                                
+Global Version (global_version)                  3                                                  
+Group (group)                                    itd@                                               
+Label (label)                                    fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997 
+Layout Type (layout_type)                        POSIX (1)                                          
+Layout Version (layout_version)                  1                                                  
+Max Snapshot (max_snapshot)                      0                                                  
+Object Version (obj_version)                     2                                                  
+Owner (owner)                                    xmei@                                              
+Performance domain level (perf_domain)           root (255)                                         
+Redundancy Factor (rd_fac)                       rd_fac0                                            
+Redundancy Level (rd_lvl)                        node (2)                                           
+Performance domain affinity level of RP (rp_pda) 4294967295                                         
+Server Checksumming (srv_cksum)                  off                                                
+Health (status)                                  HEALTHY                                            
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT                
++ echo
+
++ echo '###### Container query'
+###### Container query
++ daos cont query iobench fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997
+  Container UUID              : 58bde328-d778-475a-a09d-dcf1762257d7                        
+  Container Label             : fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997          
+  Container Type              : POSIX                                                       
+  Pool UUID                   : c31b01d3-50f4-4afd-9dbb-5c20b51e4f33                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x267f375cb4e00000 (2026-06-30 11:39:57.924663296 -0400 EDT)
+  Latest close/modify time    : 0x267f375cca600000 (2026-06-30 11:39:57.94720768 -0400 EDT) 
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : UNKNOWN                                                     
+  File Object Class           : UNKNOWN                                                     
+  Chunk Size                  : 1.0 MiB                                                     
+
++ echo
+
++ /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997 --bs=2m --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs2m_nj16_iod16_1782833997.json --output-format=json rw_pattern.fio
++ daos container destroy iobench fio_dfs-all-rw-patterns_bs2m_nj16_iod16_1782833997
++ CURRENT_CONT=
++ sleep 5
++ for bs in "${BLOCK_SIZE_LIST[@]}"
+++ date +%s
++ label=bs4m_nj16_iod16_1782834634
++ CONT=fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634
++ mkdir -p ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo 'DAOS container: fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634'
+DAOS container: fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634
++ echo 'fio parameters: numjobs=16, iodepth=16, bs=4m'
+fio parameters: numjobs=16, iodepth=16, bs=4m
++ echo 'Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns'
+Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo
+
++ daos container create --type=POSIX iobench fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634
++ CURRENT_CONT=fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634
++ echo '###### Container properties:'
+###### Container properties:
++ daos cont getprop iobench fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634
+Properties for container fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634
+Name                                             Value                                              
+----                                             -----                                              
+Highest Allocated OID (alloc_oid)                0                                                  
+Checksum (cksum)                                 off                                                
+Checksum Chunk Size (cksum_size)                 32 KiB                                             
+Compression (compression)                        off                                                
+Deduplication (dedup)                            off                                                
+Dedupe Threshold (dedup_threshold)               4.0 KiB                                            
+EC Cell Size (ec_cell_sz)                        64 KiB                                             
+Performance domain affinity level of EC (ec_pda) 1                                                  
+Encryption (encryption)                          off                                                
+Global Version (global_version)                  3                                                  
+Group (group)                                    itd@                                               
+Label (label)                                    fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634 
+Layout Type (layout_type)                        POSIX (1)                                          
+Layout Version (layout_version)                  1                                                  
+Max Snapshot (max_snapshot)                      0                                                  
+Object Version (obj_version)                     2                                                  
+Owner (owner)                                    xmei@                                              
+Performance domain level (perf_domain)           root (255)                                         
+Redundancy Factor (rd_fac)                       rd_fac0                                            
+Redundancy Level (rd_lvl)                        node (2)                                           
+Performance domain affinity level of RP (rp_pda) 4294967295                                         
+Server Checksumming (srv_cksum)                  off                                                
+Health (status)                                  HEALTHY                                            
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT                
++ echo
+
++ echo '###### Container query'
+###### Container query
++ daos cont query iobench fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634
+  Container UUID              : aab35e32-8703-4ed3-ad59-21a405386e4c                        
+  Container Label             : fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634          
+  Container Type              : POSIX                                                       
+  Pool UUID                   : c31b01d3-50f4-4afd-9dbb-5c20b51e4f33                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x267f40a27fbc0000 (2026-06-30 11:50:35.134713856 -0400 EDT)
+  Latest close/modify time    : 0x267f40a28b140000 (2026-06-30 11:50:35.14660864 -0400 EDT) 
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : UNKNOWN                                                     
+  File Object Class           : UNKNOWN                                                     
+  Chunk Size                  : 1.0 MiB                                                     
+
++ echo
+
++ /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634 --bs=4m --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs4m_nj16_iod16_1782834634.json --output-format=json rw_pattern.fio
++ daos container destroy iobench fio_dfs-all-rw-patterns_bs4m_nj16_iod16_1782834634
++ CURRENT_CONT=
++ sleep 5
+++ date
++ echo '######## Sweep 9/10 finished: Tue Jun 30 12:01:12 PM EDT 2026 ########'
+######## Sweep 9/10 finished: Tue Jun 30 12:01:12 PM EDT 2026 ########
++ for repeat in $(seq 1 "${N_REPEATS}")
+++ date
++ echo '######## Sweep 10/10 started: Tue Jun 30 12:01:12 PM EDT 2026 ########'
+######## Sweep 10/10 started: Tue Jun 30 12:01:12 PM EDT 2026 ########
++ for bs in "${BLOCK_SIZE_LIST[@]}"
+++ date +%s
++ label=bs4k_nj16_iod16_1782835272
++ CONT=fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272
++ mkdir -p ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo 'DAOS container: fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272'
+DAOS container: fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272
++ echo 'fio parameters: numjobs=16, iodepth=16, bs=4k'
+fio parameters: numjobs=16, iodepth=16, bs=4k
++ echo 'Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns'
+Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo
+
++ daos container create --type=POSIX iobench fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272
++ CURRENT_CONT=fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272
++ echo '###### Container properties:'
+###### Container properties:
++ daos cont getprop iobench fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272
+Properties for container fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272
+Name                                             Value                                              
+----                                             -----                                              
+Highest Allocated OID (alloc_oid)                0                                                  
+Checksum (cksum)                                 off                                                
+Checksum Chunk Size (cksum_size)                 32 KiB                                             
+Compression (compression)                        off                                                
+Deduplication (dedup)                            off                                                
+Dedupe Threshold (dedup_threshold)               4.0 KiB                                            
+EC Cell Size (ec_cell_sz)                        64 KiB                                             
+Performance domain affinity level of EC (ec_pda) 1                                                  
+Encryption (encryption)                          off                                                
+Global Version (global_version)                  3                                                  
+Group (group)                                    itd@                                               
+Label (label)                                    fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272 
+Layout Type (layout_type)                        POSIX (1)                                          
+Layout Version (layout_version)                  1                                                  
+Max Snapshot (max_snapshot)                      0                                                  
+Object Version (obj_version)                     2                                                  
+Owner (owner)                                    xmei@                                              
+Performance domain level (perf_domain)           root (255)                                         
+Redundancy Factor (rd_fac)                       rd_fac0                                            
+Redundancy Level (rd_lvl)                        node (2)                                           
+Performance domain affinity level of RP (rp_pda) 4294967295                                         
+Server Checksumming (srv_cksum)                  off                                                
+Health (status)                                  HEALTHY                                            
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT                
++ echo
+
++ echo '###### Container query'
+###### Container query
++ daos cont query iobench fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272
+  Container UUID              : 43a4faa4-b5a7-4429-9a7e-9f2a40727970                        
+  Container Label             : fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272          
+  Container Type              : POSIX                                                       
+  Pool UUID                   : c31b01d3-50f4-4afd-9dbb-5c20b51e4f33                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x267f49eb17f80000 (2026-06-30 12:01:13.096986624 -0400 EDT)
+  Latest close/modify time    : 0x267f49eb21740000 (2026-06-30 12:01:13.106931712 -0400 EDT)
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : UNKNOWN                                                     
+  File Object Class           : UNKNOWN                                                     
+  Chunk Size                  : 1.0 MiB                                                     
+
++ echo
+
++ /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272 --bs=4k --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs4k_nj16_iod16_1782835272.json --output-format=json rw_pattern.fio
++ daos container destroy iobench fio_dfs-all-rw-patterns_bs4k_nj16_iod16_1782835272
++ CURRENT_CONT=
++ sleep 5
++ for bs in "${BLOCK_SIZE_LIST[@]}"
+++ date +%s
++ label=bs16k_nj16_iod16_1782835954
++ CONT=fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954
++ mkdir -p ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo 'DAOS container: fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954'
+DAOS container: fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954
++ echo 'fio parameters: numjobs=16, iodepth=16, bs=16k'
+fio parameters: numjobs=16, iodepth=16, bs=16k
++ echo 'Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns'
+Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo
+
++ daos container create --type=POSIX iobench fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954
++ CURRENT_CONT=fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954
++ echo '###### Container properties:'
+###### Container properties:
++ daos cont getprop iobench fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954
+Properties for container fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954
+Name                                             Value                                               
+----                                             -----                                               
+Highest Allocated OID (alloc_oid)                0                                                   
+Checksum (cksum)                                 off                                                 
+Checksum Chunk Size (cksum_size)                 32 KiB                                              
+Compression (compression)                        off                                                 
+Deduplication (dedup)                            off                                                 
+Dedupe Threshold (dedup_threshold)               4.0 KiB                                             
+EC Cell Size (ec_cell_sz)                        64 KiB                                              
+Performance domain affinity level of EC (ec_pda) 1                                                   
+Encryption (encryption)                          off                                                 
+Global Version (global_version)                  3                                                   
+Group (group)                                    itd@                                                
+Label (label)                                    fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954 
+Layout Type (layout_type)                        POSIX (1)                                           
+Layout Version (layout_version)                  1                                                   
+Max Snapshot (max_snapshot)                      0                                                   
+Object Version (obj_version)                     2                                                   
+Owner (owner)                                    xmei@                                               
+Performance domain level (perf_domain)           root (255)                                          
+Redundancy Factor (rd_fac)                       rd_fac0                                             
+Redundancy Level (rd_lvl)                        node (2)                                            
+Performance domain affinity level of RP (rp_pda) 4294967295                                          
+Server Checksumming (srv_cksum)                  off                                                 
+Health (status)                                  HEALTHY                                             
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT                 
++ echo
+
++ echo '###### Container query'
+###### Container query
++ daos cont query iobench fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954
+  Container UUID              : 94e89a1b-1e5f-445f-81fe-bf422f087213                        
+  Container Label             : fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954         
+  Container Type              : POSIX                                                       
+  Pool UUID                   : c31b01d3-50f4-4afd-9dbb-5c20b51e4f33                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x267f53d8b7a40000 (2026-06-30 12:12:35.358908416 -0400 EDT)
+  Latest close/modify time    : 0x267f53d8c3a00000 (2026-06-30 12:12:35.371474944 -0400 EDT)
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : UNKNOWN                                                     
+  File Object Class           : UNKNOWN                                                     
+  Chunk Size                  : 1.0 MiB                                                     
+
++ echo
+
++ /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954 --bs=16k --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs16k_nj16_iod16_1782835954.json --output-format=json rw_pattern.fio
++ daos container destroy iobench fio_dfs-all-rw-patterns_bs16k_nj16_iod16_1782835954
++ CURRENT_CONT=
++ sleep 5
++ for bs in "${BLOCK_SIZE_LIST[@]}"
+++ date +%s
++ label=bs1m_nj16_iod16_1782836605
++ CONT=fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605
++ mkdir -p ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo 'DAOS container: fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605'
+DAOS container: fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605
++ echo 'fio parameters: numjobs=16, iodepth=16, bs=1m'
+fio parameters: numjobs=16, iodepth=16, bs=1m
++ echo 'Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns'
+Output directory: ../../../results/testbed/fio-dfs-all-rw-patterns
++ echo
+
++ daos container create --type=POSIX iobench fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605
++ CURRENT_CONT=fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605
++ echo '###### Container properties:'
+###### Container properties:
++ daos cont getprop iobench fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605
+Properties for container fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605
+Name                                             Value                                              
+----                                             -----                                              
+Highest Allocated OID (alloc_oid)                0                                                  
+Checksum (cksum)                                 off                                                
+Checksum Chunk Size (cksum_size)                 32 KiB                                             
+Compression (compression)                        off                                                
+Deduplication (dedup)                            off                                                
+Dedupe Threshold (dedup_threshold)               4.0 KiB                                            
+EC Cell Size (ec_cell_sz)                        64 KiB                                             
+Performance domain affinity level of EC (ec_pda) 1                                                  
+Encryption (encryption)                          off                                                
+Global Version (global_version)                  3                                                  
+Group (group)                                    itd@                                               
+Label (label)                                    fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605 
+Layout Type (layout_type)                        POSIX (1)                                          
+Layout Version (layout_version)                  1                                                  
+Max Snapshot (max_snapshot)                      0                                                  
+Object Version (obj_version)                     2                                                  
+Owner (owner)                                    xmei@                                              
+Performance domain level (perf_domain)           root (255)                                         
+Redundancy Factor (rd_fac)                       rd_fac0                                            
+Redundancy Level (rd_lvl)                        node (2)                                           
+Performance domain affinity level of RP (rp_pda) 4294967295                                         
+Server Checksumming (srv_cksum)                  off                                                
+Health (status)                                  HEALTHY                                            
+Access Control List (acl)                        A::OWNER@:rwdtTaAo, A:G:GROUP@:rwtT                
++ echo
+
++ echo '###### Container query'
+###### Container query
++ daos cont query iobench fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605
+  Container UUID              : 15cd3427-eb6c-4398-88c6-72de4a849122                        
+  Container Label             : fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605          
+  Container Type              : POSIX                                                       
+  Pool UUID                   : c31b01d3-50f4-4afd-9dbb-5c20b51e4f33                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x267f5d508a240000 (2026-06-30 12:23:25.998743552 -0400 EDT)
+  Latest close/modify time    : 0x267f5d5096a80000 (2026-06-30 12:23:26.011867136 -0400 EDT)
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : UNKNOWN                                                     
+  File Object Class           : UNKNOWN                                                     
+  Chunk Size                  : 1.0 MiB                                                     
+
++ echo
+
++ /home/xmei/local/bin/fio --ioengine=dfs --pool=iobench --cont=fio_dfs-all-rw-patterns_bs1m_nj16_iod16_1782836605 --bs=1m --numjobs=16 --iodepth=16 --output=../../../results/testbed/fio-dfs-all-rw-patterns/fio_bs1m_nj16_iod16_1782836605.json --output-format=json rw_pattern.fio
