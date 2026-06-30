@@ -12,6 +12,7 @@ set -euox pipefail
 # ---------------------------------------------------------------------------
 SKIP_DAOS=false
 N_REPEATS=1
+SCRIPT_START=$(date +%s)
 for _arg in "$@"; do
     case "${_arg}" in
         --skip-daos) SKIP_DAOS=true ;;
@@ -173,4 +174,7 @@ echo
 
 
 
+SCRIPT_END=$(date +%s)
+ELAPSED=$(( SCRIPT_END - SCRIPT_START ))
+printf "Total elapsed time: %02d:%02d:%02d (hh:mm:ss)\n" $((ELAPSED/3600)) $(( (ELAPSED%3600)/60 )) $((ELAPSED%60))
 echo "=== Done. Results in ${OUTPUT_DIR}/ ==="

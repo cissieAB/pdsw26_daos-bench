@@ -12,6 +12,7 @@
 set -euox pipefail
 
 N_REPEATS="${1:-1}"
+SCRIPT_START=$(date +%s)
 
 # ---------------------------------------------------------------------------
 # 0. Locate fio and verify version / DFS engine support
@@ -137,4 +138,7 @@ echo "######## Sweep ${repeat}/${N_REPEATS} started: $(date) ########"
 echo "######## Sweep ${repeat}/${N_REPEATS} finished: $(date) ########"
 done
 
+SCRIPT_END=$(date +%s)
+ELAPSED=$(( SCRIPT_END - SCRIPT_START ))
+printf "Total elapsed time: %02d:%02d:%02d (hh:mm:ss)\n" $((ELAPSED/3600)) $(( (ELAPSED%3600)/60 )) $((ELAPSED%60))
 echo "Done. Results written to ${OUTPUT_DIR}/"
