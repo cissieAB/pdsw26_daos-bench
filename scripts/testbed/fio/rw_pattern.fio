@@ -14,7 +14,13 @@ group_reporting=1
 randrepeat=0
 norandommap=1
 refill_buffers=1
-size=128m
+# size=128m yields a 2 GiB total working set (16 jobs x 128 MiB), which fio's
+# time_based=1 loop revisits hundreds of times within 60 s at high bandwidth,
+# producing read throughput that mostly reflects re-access to recently
+# overwritten data rather than steady-state storage performance. size=20g
+# (320 GiB total across 16 jobs) keeps the 60-s read window to roughly one
+# pass even at peak observed bandwidth (~5.4 GiB/s aggregate).
+size=20g
 filename_format=fio_data.$jobnum.$filenum
 
 # ── Prefill: sequential write to guarantee all blocks exist before any read ── #

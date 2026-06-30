@@ -3,6 +3,17 @@
 # This script runs a sweep of fio tests using the DAOS DFS engine, fixing
 #  iodepth=16 and numjobs=16 while varying block size across all rw_pattern.fio sections.
 #
+# NOTE: rw_pattern.fio uses size=20g per job (320 GiB total across 16 jobs).
+# This was increased from 128m after analysis showed the smaller working set
+# caused fio's time_based=1 read sections to loop hundreds of times over the
+# same recently-overwritten data within each 60-s window, making measured
+# read bandwidth highly sensitive to run-to-run differences in how much of
+# that churn had settled rather than to steady-state storage performance.
+# At 20g/job, prefill now writes ~320 GiB sequentially before each block-size
+# sweep (adds tens of seconds of wall-clock time per bs value, depending on
+# write bandwidth), and the 60-s read sections complete roughly one pass
+# instead of many.
+#
 # Usage: ./<this-script>.sh [N_REPEATS]
 #   N_REPEATS  number of full sweeps (default: 1)
 
