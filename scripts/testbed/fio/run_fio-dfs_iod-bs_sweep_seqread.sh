@@ -13,6 +13,8 @@
 set -euox pipefail
 
 N_REPEATS="${1:-1}"
+
+FILESIZE=400g
 SCRIPT_START=$(date +%s)
 
 # ---------------------------------------------------------------------------
@@ -57,7 +59,7 @@ IODEPTH_LIST=("4" "8" "16" "32" "64" "128" "256")
 BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-heatmap}"
-OUTPUT_DIR=../../../results/testbed/fio-dfs-iod-bs-sweep
+OUTPUT_DIR=../../../results/testbed/fio-dfs-iod-bs-sweep-size${FILESIZE}
 
 mkdir -p "${OUTPUT_DIR}"
 
@@ -115,7 +117,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
             --bs=1m \
             --numjobs="${NUMJOBS}" \
             --iodepth=16 \
-            --size=400g \
+            --size=${FILESIZE} \
             --filename=fio_data \
             --direct=1 \
             --buffered=0 \
@@ -130,7 +132,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
             --pool="${POOL}" \
             --cont="${CURRENT_CONT}" \
             --rw=read \
-            --size=4g \
+            --size=${FILESIZE} \
             --bs="${bs}" \
             --numjobs="${NUMJOBS}" \
             --iodepth="${iod}" \
