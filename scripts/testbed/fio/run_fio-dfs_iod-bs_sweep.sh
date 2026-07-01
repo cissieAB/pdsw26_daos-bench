@@ -56,7 +56,7 @@ IODEPTH_LIST=("4" "8" "16" "32" "64" "128" "256")
 BLOCK_SIZE_LIST=("4k" "16k" "1m" "2m" "4m")
 
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs-heatmap}"
-OUTPUT_DIR=../../../results/testbed/fio-dfs-heatmap-iod-bs-sweep
+OUTPUT_DIR=../../../results/testbed/fio-dfs-iod-bs-sweep
 
 mkdir -p "${OUTPUT_DIR}"
 
