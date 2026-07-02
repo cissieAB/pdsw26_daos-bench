@@ -151,7 +151,7 @@ for bs in "${BLOCK_SIZE_LIST[@]}"; do
         }
         CURRENT_CONT=""
 
-        sleep 5
+        sleep 10
 
     done
 done
