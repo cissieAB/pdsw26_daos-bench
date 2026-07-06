@@ -1,0 +1,210 @@
+#!/bin/bash
+
+# MPI-launched multi-node fio benchmark: DAOS POSIX container, native DFS engine.
+#
+# Two file-size patterns, ~10 TiB total volume each:
+#   small : 4 MiB per file   (~2,621,440 files)
+#   large : 16 GiB per file  (640 files)
+#
+# For each pattern:
+#   create POSIX container (default parameters)
+#     -> fio write to generate the files (DFS chunk_size = 4 MiB)
+#     -> fio sequential read or fio random read
+#     -> destroy the container
+#
+# fio is launched with mpiexec, one independent fio process per rank;
+# each rank owns a disjoint set of files (see fio_dfs_rank.sh).
+#
+# Submit with:
+#   qsub -q <queue> -l select=<nnodes>:ncpus=208 \
+#        [-v PPN=32,TOTAL_TIB=10,FIO_BS=4m,READ_MODE=seq] \
+#        qsub_fio_dfs_seq-rand-read.qsub
+#
+# Env overrides (via qsub -v):
+#   DAOS_POOL_NAME  (default: e2sar)
+#   DAOS_CONT_NAME  (default: fio_dfs_mpi, pattern name appended)
+#   PPN             fio processes per node (default: 32, max 48)
+#   TOTAL_TIB       total dataset volume per pattern in TiB (default: 10)
+#   FIO_BS          fio block size (default: 4m)
+#   FIO_IODEPTH     fio iodepth per process (default: 16)
+#   READ_MODE       read phases to run: seq | rand | both (default: both)
+#
+# All phases are size-bound: the read phases read the whole dataset
+# exactly once (no time_based / runtime cap).
+
+#PBS -l walltime=00:59:00
+#PBS -A e2sar-daos
+#PBS -l filesystems=home:flare:daos_user_fs
+#PBS -j oe
+
+set -euo pipefail
+
+# Load DAOS module
+module use /soft/modulefiles/ || { echo "Failed to use modulefiles"; exit 1; }
+module load daos || { echo "Failed to load DAOS module"; exit 1; }
+
+# ---------------------------------------------------------------------------
+# 0. Config
+# ---------------------------------------------------------------------------
+# Compute node default path is $HOME
+WKDIR=$HOME/iobench/pdsw26_daos-bench/scripts/aurora/fio   # <=== Change dir as needed
+cd "${WKDIR}"
+
+FIO="${HOME}/local/bin/fio"
+
+POOL="${DAOS_POOL_NAME:-e2sar}"
+CONT_BASE="${DAOS_CONT_NAME:-fio_dfs_mpi}"
+
+PPN="${PPN:-32}"
+BS="${FIO_BS:-4m}"
+IODEPTH="${FIO_IODEPTH:-16}"
+TOTAL_TIB="${TOTAL_TIB:-10}"
+READ_MODE="${READ_MODE:-seq}"        # seq | rand 
+CHUNK_SIZE=4m                    # DFS chunk size: 4 MiB
+
+SMALL_FILESIZE=4194304               # 4 MiB, must be a number
+LARGE_FILESIZE=17179869184           # 16 GiB
+TOTAL_BYTES=$(( TOTAL_TIB * 1024 * 1024 * 1024 * 1024 ))
+
+# Phases per pattern: write always generates the dataset first
+case "${READ_MODE}" in
+    seq)  RW_PHASES=(write read) ;;
+    rand) RW_PHASES=(write randread) ;;
+    *)    echo "ERROR: READ_MODE must be seq or rand (got '${READ_MODE}')" >&2
+          exit 1 ;;
+esac
+echo "Read mode: ${READ_MODE} (phases: ${RW_PHASES[*]})"
+
+NNODES=$(wc -l < "$PBS_NODEFILE")
+NRANKS=$(( NNODES * PPN ))
+HOSTNAMES=$(tr '\n' ',' < "$PBS_NODEFILE")
+echo "Nodes (${NNODES}): ${HOSTNAMES}"
+echo "Ranks: ${NRANKS} (${PPN} per node)"
+
+# skip-1 breadth scan. Bind 48 cores
+CPU_BINDING_SKIP1="list:4:6:56:58:9:11:61:63:12:14:64:66:17:19:69:71:20:22:72:74:25:27:77:79:28:30:80:82:33:35:85:87:36:38:88:90:41:43:93:95:44:46:96:98:49:51:100:102"
+export ZE_FLAT_DEVICE_HIERARCHY=COMPOSITE
+export AFFINITY_ORDERING=compact
+
+OUTPUT_DIR="${WKDIR}/../../../results/aurora/fio/mpi_pattern-cmp"
+mkdir -p "${OUTPUT_DIR}"
+OUTPUT_DIR=$(cd "${OUTPUT_DIR}" && pwd)
+
+START_TIME=$SECONDS
+
+# ---------------------------------------------------------------------------
+# 1. Sanity checks
+# ---------------------------------------------------------------------------
+if [[ ! -x "${FIO}" ]]; then
+    echo "ERROR: fio not found or not executable at ${FIO}" >&2
+    exit 1
+fi
+
+FIO_VERSION=$("${FIO}" --version | awk '{print $2}')
+echo "Using fio: ${FIO} (${FIO_VERSION})"
+
+if ! "${FIO}" --enghelp dfs &>/dev/null; then
+    echo "ERROR: fio-${FIO_VERSION} does not have the dfs ioengine compiled in." >&2
+    exit 1
+fi
+echo "fio version OK and dfs engine is available."
+
+daos pool list | grep -q -- "${POOL}" || { echo "No pool: ${POOL}"; exit 1; }
+
+# ---------------------------------------------------------------------------
+# 2. Container helpers
+# ---------------------------------------------------------------------------
+CURRENT_CONT=""
+
+cleanup() {
+    if [[ -n "${CURRENT_CONT}" ]]; then
+        daos container destroy "${POOL}" "${CURRENT_CONT}" &>/dev/null || true
+        CURRENT_CONT=""
+    fi
+}
+trap cleanup EXIT
+
+create_container() {
+    local cont=$1
+    if daos cont query "${POOL}" "${cont}" >/dev/null 2>&1; then
+        echo "Container ${cont} already exists, destroying it..."
+        daos container destroy "${POOL}" "${cont}" \
+            || { echo "Failed to destroy container ${cont}"; exit 1; }
+    fi
+    # Default POSIX container parameters
+    daos container create --type=POSIX "${POOL}" "${cont}" \
+        || { echo "Failed to create container ${cont}"; exit 1; }
+    CURRENT_CONT="${cont}"
+    echo "Container ${cont} created."
+    daos container get-prop "${POOL}" "${cont}"
+}
+
+destroy_container() {
+    local cont=$1
+    daos container destroy "${POOL}" "${cont}" \
+        || echo "WARNING: failed to destroy container ${cont}" >&2
+    CURRENT_CONT=""
+}
+
+# ---------------------------------------------------------------------------
+# 3. Benchmark: {small, large} x {write (generate), selected read phase(s)}
+# ---------------------------------------------------------------------------
+PATTERNS=(small large)
+declare -A FILESIZES=( [small]=${SMALL_FILESIZE} [large]=${LARGE_FILESIZE} )
+
+# Common env consumed by fio_dfs_rank.sh (forwarded via -genvall)
+export FIO_BIN="${FIO}"
+export DAOS_POOL="${POOL}"
+export FIO_BS="${BS}"
+export FIO_IODEPTH="${IODEPTH}"
+export FIO_CHUNK_SIZE="${CHUNK_SIZE}"
+export FIO_OUT_DIR="${OUTPUT_DIR}"
+
+for PATTERN in "${PATTERNS[@]}"; do
+    FILESIZE=${FILESIZES[$PATTERN]}
+    TOTAL_FILES=$(( TOTAL_BYTES / FILESIZE ))
+    FILES_PER_RANK=$(( TOTAL_FILES / NRANKS ))
+
+    if (( FILES_PER_RANK < 1 )); then
+        echo "ERROR: ${NRANKS} ranks > ${TOTAL_FILES} total ${PATTERN} files;" \
+             "reduce PPN/nodes or increase TOTAL_TIB." >&2
+        exit 1
+    fi
+
+    ACTUAL_GIB=$(( FILES_PER_RANK * NRANKS * FILESIZE / 1073741824 ))
+    CONT="${CONT_BASE}_${PATTERN}_$(date +%s)"
+
+    echo "========================================================"
+    echo "  Pattern: ${PATTERN}  (filesize=${FILESIZE} B)"
+    echo "  ${FILES_PER_RANK} files/rank x ${NRANKS} ranks = ${ACTUAL_GIB} GiB total"
+    echo "  bs=${BS}  iodepth=${IODEPTH}  chunk_size=${CHUNK_SIZE}"
+    echo "========================================================"
+
+    create_container "${CONT}"
+
+    export DAOS_CONT="${CONT}"
+    export FIO_NRFILES="${FILES_PER_RANK}"
+    export FIO_FILESIZE="${FILESIZE}"
+
+    # write generates the dataset; the selected read phase(s) benchmark it
+    for RW in "${RW_PHASES[@]}"; do
+        export FIO_RW="${RW}"
+        export FIO_JOBNAME="${PATTERN}_${RW}"
+        export FIO_LABEL="${PATTERN}_${RW}_bs${BS}_n${NNODES}_ppn${PPN}_$(date +%s)"
+
+        echo "--- ${PATTERN}/${RW}: mpiexec ${NRANKS} fio processes ---"
+        mpiexec -np "${NRANKS}" -ppn "${PPN}" --cpu-bind "${CPU_BINDING_SKIP1}" \
+                --no-vni -genvall -- \
+                "${WKDIR}/fio_dfs_rank.sh"
+
+        echo "Done: ${OUTPUT_DIR}/fio_${FIO_LABEL}_rank*.json"
+        sleep 10
+    done
+
+    destroy_container "${CONT}"
+done
+
+ELAPSED_TIME=$((SECONDS - START_TIME))
+echo "========================================================"
+echo "All runs complete in ${ELAPSED_TIME} seconds."
+echo "========================================================"
