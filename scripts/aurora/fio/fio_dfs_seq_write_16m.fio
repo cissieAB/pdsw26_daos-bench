@@ -1,0 +1,35 @@
+# Sequential write, 16 MiB per file, DAOS native DFS engine.
+#
+# Size-bound: each job writes its whole file set exactly once
+# (nrfiles x filesize = 1 GiB per job, x numjobs = 16 GiB total).
+#
+# Requires DAOS_POOL and DAOS_CONT in the environment (POSIX container
+# must already exist), e.g.:
+#   export DAOS_POOL=e2sar DAOS_CONT=fio_dfs
+#   fio --output-format=json --output=fio_seq_write_16m.json \
+#       fio_dfs_seq_write_16m.fio
+#
+# Override any option on the command line by appending it after the job
+# file, e.g.: fio fio_dfs_seq_write_16m.fio --nrfiles=256 --numjobs=32
+
+[global]
+ioengine=dfs
+pool=e2sar
+cont=${DAOS_CONT}
+chunk_size=4m
+
+rw=write
+bs=4m
+iodepth=16
+refill_buffers=1
+
+filesize=16g
+nrfiles=64
+filename_format=j$jobnum-f$filenum
+fallocate=none
+
+thread=1
+group_reporting=1
+
+[seq_write_16m]
+numjobs=16

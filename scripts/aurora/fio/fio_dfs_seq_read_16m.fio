@@ -1,0 +1,31 @@
+# Sequential read of the 16 MiB-per-file dataset written by
+# fio_dfs_seq_write_16m.fio. The layout options (filesize, nrfiles,
+# numjobs, filename_format) must stay identical to the write job so
+# every file is found and read back exactly once.
+#
+# Requires DAOS_POOL and DAOS_CONT in the environment; the container
+# must still hold the written dataset.
+#
+# Override options by appending them after the job file, using the SAME
+# overrides as the write run, e.g.: --nrfiles=256 --numjobs=32
+
+[global]
+ioengine=dfs
+pool=${DAOS_POOL}
+cont=${DAOS_CONT}
+chunk_size=4m
+
+rw=read
+bs=4m
+iodepth=16
+
+filesize=16m
+nrfiles=64
+filename_format=j$jobnum-f$filenum
+fallocate=none
+
+thread=1
+group_reporting=1
+
+[seq_read_16m]
+numjobs=16

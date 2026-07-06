@@ -24,9 +24,13 @@
 #   DAOS_POOL_NAME  (default: e2sar)
 #   DAOS_CONT_NAME  (default: fio_dfs_mpi, pattern name appended)
 #   PPN             fio processes per node (default: 32, max 48)
+#   FIO_NUMJOBS     fio jobs per MPI rank (default: 1); total fio jobs =
+#                   nodes x PPN x FIO_NUMJOBS, dataset split evenly across all
 #   TOTAL_TIB       total dataset volume per pattern in TiB (default: 10)
 #   FIO_BS          fio block size (default: 4m)
 #   FIO_IODEPTH     fio iodepth per process (default: 16)
+#   FIO_OPENFILES   cap on concurrently open DFS objects per process when
+#                   nrfiles > 1024 (default: 512; 0 disables the cap)
 #   READ_MODE       read phases to run: seq | rand | both (default: both)
 #
 # All phases are size-bound: the read phases read the whole dataset
@@ -56,8 +60,10 @@ POOL="${DAOS_POOL_NAME:-e2sar}"
 CONT_BASE="${DAOS_CONT_NAME:-fio_dfs_mpi}"
 
 PPN="${PPN:-32}"
+NUMJOBS="${FIO_NUMJOBS:-1}"
 BS="${FIO_BS:-4m}"
 IODEPTH="${FIO_IODEPTH:-16}"
+OPENFILES="${FIO_OPENFILES:-512}"
 TOTAL_TIB="${TOTAL_TIB:-10}"
 READ_MODE="${READ_MODE:-seq}"        # seq | rand 
 CHUNK_SIZE=4m                    # DFS chunk size: 4 MiB
@@ -77,9 +83,11 @@ echo "Read mode: ${READ_MODE} (phases: ${RW_PHASES[*]})"
 
 NNODES=$(wc -l < "$PBS_NODEFILE")
 NRANKS=$(( NNODES * PPN ))
+NJOBS_TOTAL=$(( NRANKS * NUMJOBS ))
 HOSTNAMES=$(tr '\n' ',' < "$PBS_NODEFILE")
 echo "Nodes (${NNODES}): ${HOSTNAMES}"
 echo "Ranks: ${NRANKS} (${PPN} per node)"
+echo "fio jobs: ${NJOBS_TOTAL} (${NUMJOBS} per rank)"
 
 # skip-1 breadth scan. Bind 48 cores
 CPU_BINDING_SKIP1="list:4:6:56:58:9:11:61:63:12:14:64:66:17:19:69:71:20:22:72:74:25:27:77:79:28:30:80:82:33:35:85:87:36:38:88:90:41:43:93:95:44:46:96:98:49:51:100:102"
@@ -157,40 +165,42 @@ export FIO_BIN="${FIO}"
 export DAOS_POOL="${POOL}"
 export FIO_BS="${BS}"
 export FIO_IODEPTH="${IODEPTH}"
+export FIO_OPENFILES="${OPENFILES}"
+export FIO_NUMJOBS="${NUMJOBS}"
 export FIO_CHUNK_SIZE="${CHUNK_SIZE}"
 export FIO_OUT_DIR="${OUTPUT_DIR}"
 
 for PATTERN in "${PATTERNS[@]}"; do
     FILESIZE=${FILESIZES[$PATTERN]}
     TOTAL_FILES=$(( TOTAL_BYTES / FILESIZE ))
-    FILES_PER_RANK=$(( TOTAL_FILES / NRANKS ))
+    FILES_PER_JOB=$(( TOTAL_FILES / NJOBS_TOTAL ))
 
-    if (( FILES_PER_RANK < 1 )); then
-        echo "ERROR: ${NRANKS} ranks > ${TOTAL_FILES} total ${PATTERN} files;" \
-             "reduce PPN/nodes or increase TOTAL_TIB." >&2
+    if (( FILES_PER_JOB < 1 )); then
+        echo "ERROR: ${NJOBS_TOTAL} fio jobs > ${TOTAL_FILES} total ${PATTERN} files;" \
+             "reduce PPN/nodes/FIO_NUMJOBS or increase TOTAL_TIB." >&2
         exit 1
     fi
 
-    ACTUAL_GIB=$(( FILES_PER_RANK * NRANKS * FILESIZE / 1073741824 ))
+    ACTUAL_GIB=$(( FILES_PER_JOB * NJOBS_TOTAL * FILESIZE / 1073741824 ))
     CONT="${CONT_BASE}_${PATTERN}_$(date +%s)"
 
     echo "========================================================"
     echo "  Pattern: ${PATTERN}  (filesize=${FILESIZE} B)"
-    echo "  ${FILES_PER_RANK} files/rank x ${NRANKS} ranks = ${ACTUAL_GIB} GiB total"
-    echo "  bs=${BS}  iodepth=${IODEPTH}  chunk_size=${CHUNK_SIZE}"
+    echo "  ${FILES_PER_JOB} files/job x ${NJOBS_TOTAL} jobs = ${ACTUAL_GIB} GiB total"
+    echo "  bs=${BS}  iodepth=${IODEPTH}  chunk_size=${CHUNK_SIZE}  numjobs=${NUMJOBS}"
     echo "========================================================"
 
     create_container "${CONT}"
 
     export DAOS_CONT="${CONT}"
-    export FIO_NRFILES="${FILES_PER_RANK}"
+    export FIO_NRFILES="${FILES_PER_JOB}"
     export FIO_FILESIZE="${FILESIZE}"
 
     # write generates the dataset; the selected read phase(s) benchmark it
     for RW in "${RW_PHASES[@]}"; do
         export FIO_RW="${RW}"
         export FIO_JOBNAME="${PATTERN}_${RW}"
-        export FIO_LABEL="${PATTERN}_${RW}_bs${BS}_n${NNODES}_ppn${PPN}_$(date +%s)"
+        export FIO_LABEL="${PATTERN}_${RW}_bs${BS}_n${NNODES}_ppn${PPN}_nj${NUMJOBS}_$(date +%s)"
 
         echo "--- ${PATTERN}/${RW}: mpiexec ${NRANKS} fio processes ---"
         mpiexec -np "${NRANKS}" -ppn "${PPN}" --cpu-bind "${CPU_BINDING_SKIP1}" \
