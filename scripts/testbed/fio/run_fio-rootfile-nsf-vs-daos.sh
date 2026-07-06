@@ -53,9 +53,10 @@ mkdir -p "${OUTPUT_DIR}"
 BS_LIST=(4k 4m 1m)
 FIO_ENGINES=(pvsync2 libaio psync)
 
+# <=== Update --rw=randread/--rw=read here if needed
 FIO_COMMON=(
-    --name=seq_read
-    --rw=read
+    --name=rand_read
+    --rw=randread
     --numjobs=1
     --iodepth=32
     --group_reporting=1
@@ -92,12 +93,12 @@ fi
 #    Source: daos://iobench/root-cp/test.root
 # ---------------------------------------------------------------------------
 if [[ "${SKIP_DAOS}" == true ]]; then
-    echo "=== [1/2] DAOS DFS seq_read — SKIPPED ==="
+    echo "=== [1/2] DAOS DFS read — SKIPPED ==="
 else
     echo "=== [1/2] DAOS DFS seq_read (pool=${POOL}, cont=${CONT}, file=${DAOS_FILE}) ==="
     for BS in "${BS_LIST[@]}"; do
         for RUN in $(seq 1 "${N_REPEATS}"); do
-            OUT_DAOS="${OUTPUT_DIR}/dfs_seq_read_bs${BS}_nj1_iod32_dfs_$(date +%s).json"
+            OUT_DAOS="${OUTPUT_DIR}/dfs_rand_read_bs${BS}_nj1_iod32_dfs_$(date +%s).json" # <== update random or sequential read here
             echo "--- DAOS DFS bs=${BS} run=${RUN}/${N_REPEATS} ---"
             "${FIO_DFS}" \
                 "${FIO_COMMON[@]}" \
@@ -150,12 +151,12 @@ echo "Will run: bs=[${RUN_BS[*]}]  engines=[${RUN_ENGINES[*]}]"
 read -rp "Press Enter to start NSF runs..."
 
 
-echo "=== [2/2] NSF seq_read ==="
+echo "=== [2/2] NSF read ==="
 
 for BS in "${RUN_BS[@]}"; do
     for ENGINE in "${RUN_ENGINES[@]}"; do
         for RUN in $(seq 1 "${N_REPEATS}"); do
-            OUT_NSF="${OUTPUT_DIR}/${ENGINE}_nsf_seq_read_bs${BS}_nj1_iod32_$(date +%s).json"
+            OUT_NSF="${OUTPUT_DIR}/${ENGINE}_nsf_rand_read_bs${BS}_nj1_iod32_$(date +%s).json"
             echo "--- NSF bs=${BS} engine=${ENGINE} run=${RUN}/${N_REPEATS} ---"
             "${FIO_NSF}" \
                 "${FIO_COMMON[@]}" \
