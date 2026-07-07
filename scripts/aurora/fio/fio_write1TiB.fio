@@ -7,7 +7,7 @@
 ;         --ioengine=dfs --chunk_size=2m --pool=e2sar --cont=${CONT} \
 ;         --section=write-large_fs-16g \
 ;         --output-format=json --output=fio.json \
-;         fio_dfs_mpi_write.fio'
+;         <this-file>.fio'
 ;
 ; Use --section=write-large_fs-16g for Sc.2. Without --section, each fio
 ; process runs both sections; the stonewall makes Sc.2 wait until Sc.1
