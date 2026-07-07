@@ -38,7 +38,7 @@ DFS scanner: 17179869184 bytes per file on average
 DFS scanner: 17179869184 bytes is largest file size
 DFS scanner: 64 entries in the largest directory
 
-xmei@x4714c2s7b0n0:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos pool query e2sar
+xmei@aurora-uan-0010:~/iobench/pdsw26_daos-bench> daos pool query e2sar
 Pool 33501c2e-2721-4811-adbb-118f78785224, ntarget=4032, disabled=0, leader=217, version=470, state=Ready
 Pool health info:
 - Rebuild done, 0 objs, 0 recs

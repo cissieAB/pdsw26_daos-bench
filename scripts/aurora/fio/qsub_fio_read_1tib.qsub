@@ -6,9 +6,25 @@
 # The container must already hold the large.0 .. large.(NFILES-1) files
 # (written by the 1 TiB write job); this job is a read-only pass.
 #
+# The read pass is repeated NITERS times (default 10). No explicit cache
+# flush is needed between iterations: the fio dfs ioengine bypasses the
+# kernel page cache, and each iteration launches fresh fio processes, so
+# the DAOS DFS client cache dies with them. (Kernel drop_caches would
+# need root, which compute-node jobs don't have.)
+#
 # Run with: qsub -l select=<node_number>:ncpus=208 qsub_fio_read_1tib.qsub
 # NFILES ranks are spread evenly over the nodes, so <node_number> must
 # divide NFILES (e.g. select=2 -> 64 ranks at ppn 32).
+#
+# To change any env-overridable knob (see section 0 below), pass it with
+# qsub -v as a comma-separated list, e.g.:
+#   qsub -l select=2:ncpus=208 -v PATTERN=randread qsub_fio_read_1tib.qsub
+#   qsub -l select=2:ncpus=208 -v PATTERN=randread,BS=1m,NITERS=5 qsub_fio_read_1tib.qsub
+# (Exporting the variable in your shell before qsub does NOT reach the job
+# unless you also pass -V, which forwards your whole environment.)
+#
+# NOTE: walltime below is 59 min for NITERS=10 full passes. If one pass is
+# slow, either lower NITERS or raise walltime/queue accordingly.
 
 #PBS -l walltime=00:59:00
 #PBS -A e2sar-daos
@@ -36,6 +52,7 @@ export CHUNK_SIZE="${CHUNK_SIZE:-2m}"
 export IODEPTH="${IODEPTH:-16}"
 export SIZE="${SIZE:-16g}"                 # bytes each rank reads from its file
 
+NITERS="${NITERS:-10}"                     # repeated read passes
 NFILES="${NFILES:-64}"                     # large.0 .. large.(NFILES-1)
 RANK_SCRIPT="${PBS_O_WORKDIR}/fio_read_1tib_rank.sh"
 
@@ -48,7 +65,7 @@ fi
 PPN=$(( NRANKS / NNODES ))
 
 export OUTPUT_DIR="${PBS_O_WORKDIR}/read_1tib_n${NNODES}_ppn${PPN}_bs${BS}_iod${IODEPTH}_${PBS_JOBID%%.*}"
-export LABEL="fio_1tib_${PATTERN}_n${NNODES}_ppn${PPN}_$(date +%s)"
+# LABEL is set per iteration inside the loop below (…_iterNN_<epoch>).
 
 # ---------------------------------------------------------------------------
 # 1. Sanity checks
@@ -70,14 +87,26 @@ mkdir -p "${OUTPUT_DIR}"
 echo "Pool: ${POOL}  Cont: ${CONT}  Pattern: ${PATTERN}"
 echo "Nodes: ${NNODES}  Ranks: ${NRANKS} (ppn ${PPN}, one rank per file)"
 echo "bs=${BS} chunk=${CHUNK_SIZE} iodepth=${IODEPTH} size=${SIZE}/rank"
+echo "Iterations: ${NITERS}"
 echo "Output: ${OUTPUT_DIR}"
 
 # ---------------------------------------------------------------------------
-# 2. Launch: one fio process per rank, rank R reads large.R
+# 2. Launch NITERS read passes: one fio process per rank, rank R reads large.R
 # ---------------------------------------------------------------------------
-START_TIME=${SECONDS}
+# No cache flush between iterations: dfs ioengine bypasses the kernel page
+# cache, and the DFS client cache dies with each iteration's fio processes.
+TOTAL_START=${SECONDS}
 
-mpiexec -np "${NRANKS}" -ppn "${PPN}" --no-vni -genvall -- "${RANK_SCRIPT}"
+for (( ITER=1; ITER<=NITERS; ITER++ )); do
+    export LABEL="fio_1tib_${PATTERN}_n${NNODES}_ppn${PPN}_iter$(printf '%02d' "${ITER}")_$(date +%s)"
+    echo "=== Iteration ${ITER}/${NITERS} (label ${LABEL}) ==="
 
-ELAPSED=$(( SECONDS - START_TIME ))
-echo "All ${NRANKS} ranks done in ${ELAPSED} s; per-rank JSON in ${OUTPUT_DIR}"
+    START_TIME=${SECONDS}
+    mpiexec -np "${NRANKS}" -ppn "${PPN}" --no-vni -genvall -- "${RANK_SCRIPT}"
+    ELAPSED=$(( SECONDS - START_TIME ))
+    echo "Iteration ${ITER}/${NITERS}: all ${NRANKS} ranks done in ${ELAPSED} s"
+    sleep 10  # give the filesystem a moment to settle before the next iteration
+done
+
+TOTAL_ELAPSED=$(( SECONDS - TOTAL_START ))
+echo "All ${NITERS} iterations done in ${TOTAL_ELAPSED} s; per-rank JSON in ${OUTPUT_DIR}"
