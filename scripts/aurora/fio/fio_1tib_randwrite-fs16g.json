@@ -1,62 +1,14 @@
-Failed to release large.11.1: 22
-Failed to release large.11.2: 22
-Failed to release large.11.3: 22
-Failed to release large.12.1: 22
-Failed to release large.12.2: 22
-Failed to release large.12.3: 22
-Failed to release large.1.1: 22
-Failed to release large.1.2: 22
-Failed to release large.1.3: 22
-Failed to release large.8.1: 22
-Failed to release large.8.2: 22
-Failed to release large.8.3: 22
-Failed to release large.15.1: 22
-Failed to release large.15.2: 22
-Failed to release large.15.3: 22
-Failed to release large.13.1: 22
-Failed to release large.13.2: 22
-Failed to release large.13.3: 22
-Failed to release large.2.1: 22
-Failed to release large.2.2: 22
-Failed to release large.2.3: 22
-Failed to release large.9.1: 22
-Failed to release large.9.2: 22
-Failed to release large.9.3: 22
-Failed to release large.0.1: 22
-Failed to release large.0.2: 22
-Failed to release large.0.3: 22
-Failed to release large.6.1: 22
-Failed to release large.6.2: 22
-Failed to release large.6.3: 22
-Failed to release large.3.1: 22
-Failed to release large.3.2: 22
-Failed to release large.3.3: 22
-Failed to release large.10.1: 22
-Failed to release large.10.2: 22
-Failed to release large.10.3: 22
-Failed to release large.5.1: 22
-Failed to release large.5.2: 22
-Failed to release large.5.3: 22
-Failed to release large.4.1: 22
-Failed to release large.4.2: 22
-Failed to release large.4.3: 22
-Failed to release large.7.1: 22
-Failed to release large.7.2: 22
-Failed to release large.7.3: 22
-Failed to release large.14.1: 22
-Failed to release large.14.2: 22
-Failed to release large.14.3: 22
 {
   "fio version" : "fio-3.42-67-gfb5b",
-  "timestamp" : 1783396768,
-  "timestamp_ms" : 1783396768159,
-  "time" : "Tue Jul  7 03:59:28 2026",
+  "timestamp" : 1783397623,
+  "timestamp_ms" : 1783397623465,
+  "time" : "Tue Jul  7 04:13:43 2026",
   "global options" : {
     "ioengine" : "dfs",
     "chunk_size" : "2m",
     "pool" : "e2sar",
     "cont" : "fio-fs16g",
-    "rw" : "write",
+    "rw" : "randwrite",
     "iodepth" : "16",
     "create_on_open" : "1",
     "group_reporting" : "1",
@@ -66,17 +18,16 @@ Failed to release large.14.3: 22
     {
       "jobname" : "write-large_fs-16g",
       "groupid" : 0,
-      "job_start" : 1783396683738,
-      "error" : 22,
+      "job_start" : 1783397592231,
+      "error" : 0,
       "eta" : 0,
-      "elapsed" : 90,
+      "elapsed" : 52,
       "job options" : {
         "stonewall" : "",
         "bs" : "2m",
         "filesize" : "16g",
-        "numjobs" : "16",
-        "nrfiles" : "4",
-        "filename_format" : "large.$jobnum.$filenum"
+        "numjobs" : "64",
+        "filename_format" : "large.$jobnum"
       },
       "read" : {
         "io_bytes" : 0,
@@ -124,64 +75,64 @@ Failed to release large.14.3: 22
       "write" : {
         "io_bytes" : 1099511627776,
         "io_kbytes" : 1073741824,
-        "bw_bytes" : 13140892636,
-        "bw" : 12832902,
-        "iops" : 6266.065901,
-        "runtime" : 83671,
+        "bw_bytes" : 44194365841,
+        "bw" : 43158560,
+        "iops" : 21073.515817,
+        "runtime" : 24879,
         "total_ios" : 524288,
         "short_ios" : 0,
         "drop_ios" : 0,
         "slat_ns" : {
-          "min" : 212492,
-          "max" : 1417549,
-          "mean" : 358165.268887,
-          "stddev" : 62229.502377,
+          "min" : 231302,
+          "max" : 102908121,
+          "mean" : 460707.103472,
+          "stddev" : 189991.774022,
           "N" : 524288
         },
         "clat_ns" : {
-          "min" : 482948,
-          "max" : 793131310,
-          "mean" : 38137840.313559,
-          "stddev" : 84991340.210343,
+          "min" : 526984,
+          "max" : 1253005024,
+          "mean" : 43030632.867620,
+          "stddev" : 97677889.176082,
           "N" : 524288,
           "percentile" : {
-            "1.000000" : 602112,
-            "5.000000" : 1019904,
-            "10.000000" : 1335296,
-            "20.000000" : 1499136,
-            "30.000000" : 1581056,
-            "40.000000" : 1662976,
-            "50.000000" : 1744896,
-            "60.000000" : 1925120,
-            "70.000000" : 3260416,
-            "80.000000" : 29229056,
-            "90.000000" : 168820736,
-            "95.000000" : 250609664,
-            "99.000000" : 362807296,
-            "99.500000" : 400556032,
-            "99.900000" : 484442112,
-            "99.950000" : 517996544,
-            "99.990000" : 599785472
+            "1.000000" : 618496,
+            "5.000000" : 659456,
+            "10.000000" : 692224,
+            "20.000000" : 765952,
+            "30.000000" : 872448,
+            "40.000000" : 1003520,
+            "50.000000" : 1236992,
+            "60.000000" : 1581056,
+            "70.000000" : 2342912,
+            "80.000000" : 44826624,
+            "90.000000" : 187695104,
+            "95.000000" : 274726912,
+            "99.000000" : 417333248,
+            "99.500000" : 476053504,
+            "99.900000" : 658505728,
+            "99.950000" : 759169024,
+            "99.990000" : 943718400
           }
         },
         "lat_ns" : {
-          "min" : 726715,
-          "max" : 793554138,
-          "mean" : 38496005.582445,
-          "stddev" : 84992535.476191,
+          "min" : 812605,
+          "max" : 1253447823,
+          "mean" : 43491339.971092,
+          "stddev" : 97679314.100624,
           "N" : 524288
         },
-        "bw_min" : 3244032,
-        "bw_max" : 28360704,
+        "bw_min" : 21413621,
+        "bw_max" : 70749185,
         "bw_agg" : 100.000000,
-        "bw_mean" : 13624066.214940,
-        "bw_dev" : 268803.444561,
-        "bw_samples" : 2523,
-        "iops_min" : 1584,
-        "iops_max" : 13848,
-        "iops_mean" : 6652.224285,
-        "iops_stddev" : 131.252432,
-        "iops_samples" : 2523
+        "bw_mean" : 48502852.240463,
+        "bw_dev" : 166601.874256,
+        "bw_samples" : 2228,
+        "iops_min" : 10453,
+        "iops_max" : 34542,
+        "iops_mean" : 23673.387930,
+        "iops_stddev" : 81.338899,
+        "iops_samples" : 2228
       },
       "trim" : {
         "io_bytes" : 0,
@@ -236,18 +187,18 @@ Failed to release large.14.3: 22
           "N" : 0
         }
       },
-      "job_runtime" : 1261934,
-      "usr_cpu" : 95.410378,
-      "sys_cpu" : 4.618070,
-      "ctx" : 110,
+      "job_runtime" : 1427394,
+      "usr_cpu" : 88.591797,
+      "sys_cpu" : 5.857177,
+      "ctx" : 3210,
       "majf" : 0,
-      "minf" : 48131,
+      "minf" : 149494,
       "iodepth_level" : {
         "1" : 0.100000,
         "2" : 0.100000,
         "4" : 0.100000,
         "8" : 0.100000,
-        "16" : 99.954224,
+        "16" : 99.816895,
         "32" : 0.000000,
         ">=64" : 0.000000
       },
@@ -262,7 +213,7 @@ Failed to release large.14.3: 22
       },
       "iodepth_complete" : {
         "0" : 0.000000,
-        "4" : 99.998474,
+        "4" : 99.993892,
         "8" : 0.000000,
         "16" : 0.100000,
         "32" : 0.000000,
@@ -289,22 +240,22 @@ Failed to release large.14.3: 22
         "50" : 0.000000,
         "100" : 0.000000,
         "250" : 0.000000,
-        "500" : 0.010000,
-        "750" : 3.382874,
-        "1000" : 1.410484
+        "500" : 0.000000,
+        "750" : 18.108177,
+        "1000" : 21.550369
       },
       "latency_ms" : {
-        "2" : 57.895851,
-        "4" : 14.224434,
-        "10" : 2.667618,
-        "20" : 0.230026,
-        "50" : 1.284981,
-        "100" : 3.876686,
-        "250" : 10.024452,
-        "500" : 4.928589,
-        "750" : 0.067329,
-        "1000" : 0.010000,
-        "2000" : 0.000000,
+        "2" : 27.144051,
+        "4" : 8.552933,
+        "10" : 3.156090,
+        "20" : 0.441933,
+        "50" : 1.317596,
+        "100" : 3.498650,
+        "250" : 10.033607,
+        "500" : 5.808258,
+        "750" : 0.334358,
+        "1000" : 0.049400,
+        "2000" : 0.010000,
         ">=2000" : 0.000000
       },
       "latency_depth" : 16,
