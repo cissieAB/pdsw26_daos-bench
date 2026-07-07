@@ -1,0 +1,83 @@
+#!/bin/bash
+
+# 1 TiB sequential-read benchmark: MPI-launched fio, one rank per file.
+# Wraps fio_read_1tib_rank.sh — each rank runs a single fio job that reads
+# exactly SIZE (16g) from its own file large.$RANK, then stops.
+# The container must already hold the large.0 .. large.(NFILES-1) files
+# (written by the 1 TiB write job); this job is a read-only pass.
+#
+# Run with: qsub -l select=<node_number>:ncpus=208 qsub_fio_read_1tib.qsub
+# NFILES ranks are spread evenly over the nodes, so <node_number> must
+# divide NFILES (e.g. select=2 -> 64 ranks at ppn 32).
+
+#PBS -l walltime=00:30:00
+#PBS -A e2sar-daos
+#PBS -q debug-scaling
+#PBS -l filesystems=home:flare:daos_user_fs
+#PBS -j oe
+
+set -euo pipefail
+
+# Load DAOS module
+module use /soft/modulefiles/ || { echo "Failed to use modulefiles"; exit 1; }
+module load daos || { echo "Failed to load DAOS module"; exit 1; }
+
+cd "${PBS_O_WORKDIR}"
+
+# ---------------------------------------------------------------------------
+# 0. Config (env-overridable)
+# ---------------------------------------------------------------------------
+export FIO="${FIO:-${HOME}/local/bin/fio}"
+export POOL="${DAOS_POOL_NAME:-e2sar}"
+export CONT="${DAOS_CONT_NAME:-fio-1tib-fs16g}"
+export PATTERN="${PATTERN:-read}"          # read | randread
+export BS="${BS:-2m}"
+export CHUNK_SIZE="${CHUNK_SIZE:-2m}"
+export IODEPTH="${IODEPTH:-16}"
+export SIZE="${SIZE:-16g}"                 # bytes each rank reads from its file
+
+NFILES="${NFILES:-64}"                     # large.0 .. large.(NFILES-1)
+RANK_SCRIPT="${PBS_O_WORKDIR}/fio_read_1tib_rank.sh"
+
+NNODES=$(wc -l < "${PBS_NODEFILE}")
+NRANKS="${NFILES}"                         # one rank per file
+if (( NRANKS % NNODES != 0 )); then
+    echo "ERROR: NFILES=${NFILES} not divisible by NNODES=${NNODES}" >&2
+    exit 1
+fi
+PPN=$(( NRANKS / NNODES ))
+
+export OUTPUT_DIR="${PBS_O_WORKDIR}/read_1tib_n${NNODES}_ppn${PPN}_bs${BS}_iod${IODEPTH}_${PBS_JOBID%%.*}"
+export LABEL="fio_1tib_${PATTERN}_n${NNODES}_ppn${PPN}_$(date +%s)"
+
+# ---------------------------------------------------------------------------
+# 1. Sanity checks
+# ---------------------------------------------------------------------------
+[[ -x "${FIO}" ]] || { echo "ERROR: fio not executable at ${FIO}" >&2; exit 1; }
+"${FIO}" --enghelp dfs &>/dev/null \
+    || { echo "ERROR: fio at ${FIO} lacks the dfs ioengine" >&2; exit 1; }
+[[ -x "${RANK_SCRIPT}" ]] \
+    || { echo "ERROR: rank script not executable at ${RANK_SCRIPT}" >&2; exit 1; }
+
+daos pool query "${POOL}" >/dev/null \
+    || { echo "ERROR: DAOS pool '${POOL}' not found" >&2; exit 1; }
+# Read-only pass: the data container must already exist — never create it here.
+daos cont query "${POOL}" "${CONT}" >/dev/null \
+    || { echo "ERROR: container '${CONT}' not found in pool '${POOL}'" >&2; exit 1; }
+
+mkdir -p "${OUTPUT_DIR}"
+
+echo "Pool: ${POOL}  Cont: ${CONT}  Pattern: ${PATTERN}"
+echo "Nodes: ${NNODES}  Ranks: ${NRANKS} (ppn ${PPN}, one rank per file)"
+echo "bs=${BS} chunk=${CHUNK_SIZE} iodepth=${IODEPTH} size=${SIZE}/rank"
+echo "Output: ${OUTPUT_DIR}"
+
+# ---------------------------------------------------------------------------
+# 2. Launch: one fio process per rank, rank R reads large.R
+# ---------------------------------------------------------------------------
+START_TIME=${SECONDS}
+
+mpiexec -np "${NRANKS}" -ppn "${PPN}" --no-vni -genvall -- "${RANK_SCRIPT}"
+
+ELAPSED=$(( SECONDS - START_TIME ))
+echo "All ${NRANKS} ranks done in ${ELAPSED} s; per-rank JSON in ${OUTPUT_DIR}"
