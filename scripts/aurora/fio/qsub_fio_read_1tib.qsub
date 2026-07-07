@@ -10,7 +10,7 @@
 # NFILES ranks are spread evenly over the nodes, so <node_number> must
 # divide NFILES (e.g. select=2 -> 64 ranks at ppn 32).
 
-#PBS -l walltime=00:30:00
+#PBS -l walltime=00:59:00
 #PBS -A e2sar-daos
 #PBS -q debug-scaling
 #PBS -l filesystems=home:flare:daos_user_fs
