@@ -29,8 +29,6 @@
 ; finishes within that process (ranks are NOT synchronized with each other).
 
 [global]
-ioengine=dfs
-pool=e2sar
 rw=write
 iodepth=16
 thread=1
