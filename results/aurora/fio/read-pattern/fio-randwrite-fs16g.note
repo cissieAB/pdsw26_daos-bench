@@ -37,3 +37,25 @@ DFS scanner: 1099511627776 bytes of total data
 DFS scanner: 17179869184 bytes per file on average
 DFS scanner: 17179869184 bytes is largest file size
 DFS scanner: 64 entries in the largest directory
+
+xmei@x4714c2s7b0n0:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos pool query e2sar
+Pool 33501c2e-2721-4811-adbb-118f78785224, ntarget=4032, disabled=0, leader=217, version=470, state=Ready
+Pool health info:
+- Rebuild done, 0 objs, 0 recs
+Pool space info:
+- Target(VOS) count:4032
+- Storage tier 0 (SCM):
+  Total size: 3.0 TB
+  Free: 2.6 TB, min:653 MB, max:654 MB, mean:654 MB
+- Storage tier 1 (NVMe):
+  Total size: 97 TB
+  Free: 83 TB, min:20 GB, max:21 GB, mean:21 GB
+  
+
+  # Test read 1TiB with 1 fio process
+  $HOME/local/bin/fio --ioengine=dfs --pool=e2sar --cont=fio-1tib-fs16g \
+>   --rw=read --bs=2m --numjobs=64 --iodepth=16 \
+>   --filename_format='large.$jobnum' \
+>   --time_based=0 --group_reporting=1 \
+>   --output-format=json --output=fio-read1TiB-seqread-fs16g \
+>   --name=test-read1ti --size=16gb

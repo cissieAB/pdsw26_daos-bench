@@ -23,23 +23,24 @@ IODEPTH="${IODEPTH:-16}"
 FILESIZE="${FILESIZE:-16g}"
 
 FIRST=$(( RANK * FILES_PER_RANK ))
-FILENAMES="large.${FIRST}"
-for (( i = 1; i < FILES_PER_RANK; i++ )); do
-    FILENAMES+=":large.$(( FIRST + i ))"
-done
 
-EXTRA_OPTS=()
-if [[ "${PATTERN}" == "read" ]]; then
-    # Finish one file before moving to the next, so each stream stays
-    # truly sequential (default roundrobin interleaves across files).
-    EXTRA_OPTS+=(--file_service_type=sequential)
-fi
+# The fio dfs engine holds a single open DFS object per job (dd->obj in
+# engines/dfs.c), so a job must never touch more than one file — with a
+# colon-separated filename list, switching files releases the wrong handle
+# and reads fail with DER_NO_HDL. Give each file its own job instead (same
+# one-file-per-job layout the 1 TiB write used). On the fio command line,
+# options before the first --name are global; each --name starts a new job,
+# and all jobs run concurrently.
+JOB_OPTS=()
+for (( i = 0; i < FILES_PER_RANK; i++ )); do
+    F="large.$(( FIRST + i ))"
+    JOB_OPTS+=(--name="${F}" --filename="${F}")
+done
 
 # No end_fsync / create_on_open: read-only pass over existing data.
 # allow_file_create=0 makes a missing large.N fail loudly instead of
 # silently creating an empty file.
 exec "${FIO}" \
-    --name="${PATTERN}-1tib" \
     --ioengine=dfs \
     --pool="${POOL}" \
     --cont="${CONT}" \
@@ -47,11 +48,10 @@ exec "${FIO}" \
     --rw="${PATTERN}" \
     --bs="${BS}" \
     --iodepth="${IODEPTH}" \
-    --filename="${FILENAMES}" \
     --filesize="${FILESIZE}" \
     --allow_file_create=0 \
     --randrepeat=0 \
     --group_reporting=1 \
     --output-format=json \
     --output="${OUTPUT_DIR}/${LABEL}_rank$(printf '%03d' "${RANK}").json" \
-    "${EXTRA_OPTS[@]}"
+    "${JOB_OPTS[@]}"
