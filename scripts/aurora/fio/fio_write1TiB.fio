@@ -14,29 +14,26 @@
 ; finishes within that process (ranks are NOT synchronized with each other).
 
 [global]
-rw=write
+rw=randwrite
 iodepth=16
 create_on_open=1
 group_reporting=1
 end_fsync=1
 
-; --- Sc.1-style: many small files (10 TiB = 2,621,440 x 4 MiB) ---
+; --- Sc.1-style: many small files (1 TiB = 2,621,44 x 4 MiB) ---
 [write-small_fs-4m]
 bs=2m
 filesize=4m
 numjobs=
 nrfiles=5120
-openfiles=128
 file_service_type=sequential
 filename_format=small.$jobnum.$filenum
 
 
-; --- Sc.2-style: few large files (10 TiB = 640 x 16 GiB) ---
+; --- Sc.2-style: few large files (1 TiB = 64 x 16 GiB) ---
 [write-large_fs-16g]
 stonewall
 bs=2m
 filesize=16g
-numjobs=32
-nrfiles=20
-openfiles=8
-filename_format=large.$jobnum.$filenum
+numjobs=64
+filename_format=large.$jobnum
