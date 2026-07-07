@@ -1,0 +1,42 @@
+# fio write benchmark: DAOS POSIX container, native DFS engine.
+;
+;
+;
+; Example - 
+;   $HOME/local/bin/fio \
+;         --ioengine=dfs --chunk_size=2m --pool=e2sar --cont=${CONT} \
+;         --section=write-large_fs-16g \
+;         --output-format=json --output=fio.json \
+;         fio_dfs_mpi_write.fio'
+;
+; Use --section=write-large_fs-16g for Sc.2. Without --section, each fio
+; process runs both sections; the stonewall makes Sc.2 wait until Sc.1
+; finishes within that process (ranks are NOT synchronized with each other).
+
+[global]
+rw=write
+iodepth=16
+create_on_open=1
+group_reporting=1
+end_fsync=1
+
+; --- Sc.1-style: many small files (10 TiB = 2,621,440 x 4 MiB) ---
+[write-small_fs-4m]
+bs=2m
+filesize=4m
+numjobs=
+nrfiles=5120
+openfiles=128
+file_service_type=sequential
+filename_format=small.$jobnum.$filenum
+
+
+; --- Sc.2-style: few large files (10 TiB = 640 x 16 GiB) ---
+[write-large_fs-16g]
+stonewall
+bs=2m
+filesize=16g
+numjobs=32
+nrfiles=20
+openfiles=8
+filename_format=large.$jobnum.$filenum
