@@ -1,0 +1,39 @@
+
+# 2 containers
+xmei@aurora-uan-0010:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos pool list-cont e2sar
+UUID                                 Label           
+----                                 -----           
+b7e9e607-0909-4456-ba0c-87443714631b fio-1tib-fs16g  
+299132a4-91a0-46ba-beae-4e96723b6242 fio-10tib-fs16g
+
+# 10 TiB write almost succeeded.
+xmei@aurora-uan-0010:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos fs scan e2sar fio-10tib-fs16g
+DFS scanner: Start (2026-07-07-04:58:36)
+DFS scanner: Scanned 126 files/directories (runtime: 30 sec)
+DFS scanner: Scanned 259 files/directories (runtime: 60 sec)
+DFS scanner: Scanned 402 files/directories (runtime: 90 sec)
+DFS scanner: Scanned 536 files/directories (runtime: 120 sec)
+DFS scanner: Done! (runtime: 144 sec)
+DFS scanner: 640 scanned objects
+DFS scanner: 640 files
+DFS scanner: 0 symlinks
+DFS scanner: 0 directories
+DFS scanner: 1 max tree depth
+DFS scanner: 10994908659712 bytes of total data
+DFS scanner: 17179544780 bytes per file on average
+DFS scanner: 17179869184 bytes is largest file size
+DFS scanner: 640 entries in the largest directory
+
+# 1TiB write succeeded.
+xmei@aurora-uan-0010:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos fs scan e2sar fio-1tib-fs16g
+DFS scanner: Start (2026-07-07-05:06:06)
+DFS scanner: Done! (runtime: 14 sec)
+DFS scanner: 64 scanned objects
+DFS scanner: 64 files
+DFS scanner: 0 symlinks
+DFS scanner: 0 directories
+DFS scanner: 1 max tree depth
+DFS scanner: 1099511627776 bytes of total data
+DFS scanner: 17179869184 bytes per file on average
+DFS scanner: 17179869184 bytes is largest file size
+DFS scanner: 64 entries in the largest directory
