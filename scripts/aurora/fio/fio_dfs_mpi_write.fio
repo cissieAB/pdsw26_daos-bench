@@ -52,7 +52,7 @@ filename_format=small.rank${RANKID}.$jobnum.$filenum
 stonewall
 bs=1m
 filesize=16g
-numjobs=4
-nrfiles=5
+numjobs=32
+nrfiles=20
 openfiles=8
 filename_format=large.rank${RANKID}.$jobnum.$filenum
