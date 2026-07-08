@@ -1,0 +1,117 @@
+#!/bin/bash
+
+# Small-file sequential-read benchmark: MPI-launched fio, one rank per
+# write-side job. Wraps mpi-fio_read_smallfiles-per-rank.sh — each rank runs
+# a single fio job that reads SIZE (16g) spread over NRFILES (4096) files
+# small.$RANK.0 .. small.$RANK.(NRFILES-1), i.e. 4 MiB per file, then stops.
+# The container CONT must already hold the files written by the matching
+# fs4m write job (filename_format=small.$jobnum.$filenum, numjobs=NJOBS);
+# this job is a read-only pass.
+# Total data read per pass = NJOBS x SIZE (e.g. 64 x 16g = 1 TiB
+# in 64 x 4096 = 262144 files of 4 MiB).
+#
+# The read pass is repeated NITERS times (default 1).
+#
+# Run with: qsub -l select=<node_number>:ncpus=208 qsub_fio_read_smallFilesPerRank.qsub
+# NJOBS ranks are spread evenly over the nodes, so <node_number> must
+# divide NJOBS (e.g. select=2 -> 64 ranks at ppn 32).
+#
+# To change any env-overridable knob (see section 0 below), pass it with
+# qsub -v as a comma-separated list, e.g.:
+#   qsub -l select=2:ncpus=208 -v PATTERN=randread qsub_fio_read_smallFilesPerRank.qsub
+#   qsub -l select=2:ncpus=208 -v PATTERN=randread,NITERS=5 qsub_fio_read_smallFilesPerRank.qsub
+#   qsub -l select=2:ncpus=208 -v CONT=fio-1tib-fs4m qsub_fio_read_smallFilesPerRank.qsub
+# (Exporting the variable in your shell before qsub does NOT reach the job
+# unless you also pass -V, which forwards your whole environment.)
+#
+# NOTE: walltime below is 59 min. Small-file reads pay per-file open/close
+# metadata cost, so a pass is slower than the same volume in large files;
+# lower NITERS or raise walltime/queue if a pass runs long.
+
+#PBS -l walltime=00:59:00
+#PBS -A e2sar-daos
+#PBS -q debug-scaling
+#PBS -l filesystems=home:flare:daos_user_fs
+#PBS -j oe
+
+set -euo pipefail
+
+# Load DAOS module
+module use /soft/modulefiles/ || { echo "Failed to use modulefiles"; exit 1; }
+module load daos || { echo "Failed to load DAOS module"; exit 1; }
+
+cd "${PBS_O_WORKDIR}"
+
+# ---------------------------------------------------------------------------
+# 0. Config (env-overridable)
+# ---------------------------------------------------------------------------
+export FIO="${FIO:-${HOME}/local/bin/fio}"
+export POOL="${DAOS_POOL_NAME:-e2sar}"
+export PATTERN="${PATTERN:-read}"          # read | randread
+export BS="${BS:-2m}"
+export CHUNK_SIZE="${CHUNK_SIZE:-2m}"
+export IODEPTH="${IODEPTH:-1}"             # <= filesize (4 MiB) / bs (2 MiB) = 2
+export SIZE="${SIZE:-16g}"                 # bytes each rank reads across its files
+export NRFILES="${NRFILES:-4096}"          # files per rank; SIZE/NRFILES = 4 MiB each
+export FILE_SERVICE_TYPE="${FILE_SERVICE_TYPE:-sequential}"
+
+NITERS="${NITERS:-1}"                      # repeated read passes
+NJOBS="${NJOBS:-64}"                       # write-side numjobs = ranks; small.0..(NJOBS-1).*
+export CONT="${CONT:-fio-1tib-fs4m}"       # container name
+RANK_SCRIPT="${PBS_O_WORKDIR}/mpi-fio_read_smallfiles-per-rank.sh"
+
+NNODES=$(wc -l < "${PBS_NODEFILE}")
+NRANKS="${NJOBS}"                          # one rank per write-side job
+if (( NRANKS % NNODES != 0 )); then
+    echo "ERROR: NJOBS=${NJOBS} not divisible by NNODES=${NNODES}" >&2
+    exit 1
+fi
+PPN=$(( NRANKS / NNODES ))
+
+export OUTPUT_DIR="${PBS_O_WORKDIR}/${PATTERN}_${CONT}_n${NNODES}_ppn${PPN}_bs${BS}_iod${IODEPTH}_${PBS_JOBID%%.*}"
+# LABEL is set per iteration inside the loop below (…_iterNN_<epoch>).
+
+# ---------------------------------------------------------------------------
+# 1. Sanity checks
+# ---------------------------------------------------------------------------
+[[ -x "${FIO}" ]] || { echo "ERROR: fio not executable at ${FIO}" >&2; exit 1; }
+"${FIO}" --enghelp dfs &>/dev/null \
+    || { echo "ERROR: fio at ${FIO} lacks the dfs ioengine" >&2; exit 1; }
+[[ -x "${RANK_SCRIPT}" ]] \
+    || { echo "ERROR: rank script not executable at ${RANK_SCRIPT}" >&2; exit 1; }
+
+daos pool query "${POOL}" >/dev/null \
+    || { echo "ERROR: DAOS pool '${POOL}' not found" >&2; exit 1; }
+# Read-only pass: the data container must already exist — never create it here.
+daos cont query "${POOL}" "${CONT}" >/dev/null \
+    || { echo "ERROR: container '${CONT}' not found in pool '${POOL}'" >&2; exit 1; }
+
+mkdir -p "${OUTPUT_DIR}"
+
+echo "Pool: ${POOL}  Cont: ${CONT}  Pattern: ${PATTERN}"
+echo "Nodes: ${NNODES}  Ranks: ${NRANKS} (ppn ${PPN}, one rank per write-side job)"
+echo "bs=${BS} chunk=${CHUNK_SIZE} iodepth=${IODEPTH} size=${SIZE}/rank over ${NRFILES} files"
+echo "Iterations: ${NITERS}"
+echo "Output: ${OUTPUT_DIR}"
+
+# ---------------------------------------------------------------------------
+# 2. Launch NITERS read passes: one fio process per rank,
+#    rank R reads small.R.0 .. small.R.(NRFILES-1)
+# ---------------------------------------------------------------------------
+# No cache flush between iterations: dfs ioengine bypasses the kernel page
+# cache, and the DFS client cache dies with each iteration's fio processes.
+TOTAL_START=${SECONDS}
+
+for (( ITER=1; ITER<=NITERS; ITER++ )); do
+    export LABEL="fio_${PATTERN}_n${NNODES}_ppn${PPN}_iter$(printf '%02d' "${ITER}")_$(date +%s)"
+    echo "=== Iteration ${ITER}/${NITERS} (label ${LABEL}) ==="
+
+    START_TIME=${SECONDS}
+    mpiexec -np "${NRANKS}" -ppn "${PPN}" --no-vni -genvall -- "${RANK_SCRIPT}"
+    ELAPSED=$(( SECONDS - START_TIME ))
+    echo "Iteration ${ITER}/${NITERS}: all ${NRANKS} ranks done in ${ELAPSED} s"
+    sleep 10  # give the filesystem a moment to settle before the next iteration
+done
+
+TOTAL_ELAPSED=$(( SECONDS - TOTAL_START ))
+echo "All ${NITERS} iterations done in ${TOTAL_ELAPSED} s; per-rank JSON in ${OUTPUT_DIR}"

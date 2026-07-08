@@ -2,11 +2,12 @@
 
 # Sequential-read benchmark: MPI-launched fio, one rank per file.
 # Wraps mpi-fio_read_1file-per-rank.sh — each rank runs a single fio job that
-# reads exactly SIZE (16g) from its own file large.$RANK, then stops.
+# reads its own file large.$RANK exactly once (SIZE=100% of the file), then
+# stops.
 # The container CONT must already hold the large.0 .. large.(NFILES-1) files
 # (written by the matching write job); this job is a read-only pass.
-# Total data read per pass = NFILES x SIZE (e.g. 64 x 16g = 1 TiB,
-# 640 x 16g = 10 TiB).
+# Total data read per pass = NFILES x file size (e.g. 64 x 16 GiB = 1 TiB,
+# 640 x 16 GiB = 10 TiB).
 #
 # The read pass is repeated NITERS times (default 1).
 #
@@ -48,7 +49,11 @@ export PATTERN="${PATTERN:-read}"          # read | randread
 export BS="${BS:-2m}"
 export CHUNK_SIZE="${CHUNK_SIZE:-2m}"
 export IODEPTH="${IODEPTH:-16}"
-export SIZE="${SIZE:-16g}"                 # bytes each rank reads from its file
+export SIZE="${SIZE:-100%}"                # portion of each file read per pass;
+                                           # 100% = whole file once. Never set an
+                                           # absolute value above the real file
+                                           # size: fio would unlink the file (see
+                                           # rank script).
 
 NITERS="${NITERS:-1}"                     # repeated read passes
 NFILES="${NFILES:-64}"                     # large.0 .. large.(NFILES-1)

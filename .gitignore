@@ -10,3 +10,6 @@
 
 # NFS files
 .nfs*
+
+# PBS job logs
+*.qsub.o*
