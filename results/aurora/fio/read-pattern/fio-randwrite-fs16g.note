@@ -24,6 +24,18 @@ DFS scanner: 17179544780 bytes per file on average
 DFS scanner: 17179869184 bytes is largest file size
 DFS scanner: 640 entries in the largest directory
 
+# 10 TiB smaller ones
+Short files in e2sar/fio-10tib-fs16g (full size = 17179869184 bytes / 16 GiB)
+Chunk size = 2 MiB; 39 of 640 files short; total missing = 198 MiB (0.002%)
+Deficit        Chunks  Count  Files (large.N)
+2 MiB          1       15     27, 45, 64, 115, 126, 219, 242, 296, 402, 405, 506, 543, 597, 608, 628
+4 MiB          2       11     21, 46, 87, 125, 176, 178, 269, 343, 358, 399, 429
+6 MiB          3       6      154, 226, 286, 458, 470, 618
+8 MiB          4       2      3, 201
+10 MiB         5       3      42, 222, 564
+14 MiB         7       1      392
+28 MiB         14      1      494
+
 # 1TiB write succeeded.
 xmei@aurora-uan-0010:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos fs scan e2sar fio-1tib-fs16g
 DFS scanner: Start (2026-07-07-05:06:06)
