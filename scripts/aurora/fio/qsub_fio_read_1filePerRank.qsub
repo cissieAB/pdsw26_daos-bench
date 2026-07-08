@@ -6,11 +6,7 @@
 # The container must already hold the large.0 .. large.(NFILES-1) files
 # (written by the 1 TiB write job); this job is a read-only pass.
 #
-# The read pass is repeated NITERS times (default 10). No explicit cache
-# flush is needed between iterations: the fio dfs ioengine bypasses the
-# kernel page cache, and each iteration launches fresh fio processes, so
-# the DAOS DFS client cache dies with them. (Kernel drop_caches would
-# need root, which compute-node jobs don't have.)
+# The read pass is repeated NITERS times (default 1).
 #
 # Run with: qsub -l select=<node_number>:ncpus=208 qsub_fio_read_1tib.qsub
 # NFILES ranks are spread evenly over the nodes, so <node_number> must
@@ -54,7 +50,7 @@ export SIZE="${SIZE:-16g}"                 # bytes each rank reads from its file
 
 NITERS="${NITERS:-1}"                     # repeated read passes
 NFILES="${NFILES:-64}"                     # large.0 .. large.(NFILES-1)
-RANK_SCRIPT="${PBS_O_WORKDIR}/fio_read_1tib_rank.sh"
+RANK_SCRIPT="${PBS_O_WORKDIR}/fio_read_1file-per-rank.sh"
 
 NNODES=$(wc -l < "${PBS_NODEFILE}")
 NRANKS="${NFILES}"                         # one rank per file

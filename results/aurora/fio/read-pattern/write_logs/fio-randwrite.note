@@ -1,18 +1,14 @@
 
-# 2 containers
+# 2 containers of fs16g
 xmei@aurora-uan-0010:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos pool list-cont e2sar
 UUID                                 Label           
 ----                                 -----           
 b7e9e607-0909-4456-ba0c-87443714631b fio-1tib-fs16g  
 299132a4-91a0-46ba-beae-4e96723b6242 fio-10tib-fs16g
 
-# 10 TiB write almost succeeded.
+# 10 TiB write ALMOST succeeded.
 xmei@aurora-uan-0010:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos fs scan e2sar fio-10tib-fs16g
 DFS scanner: Start (2026-07-07-04:58:36)
-DFS scanner: Scanned 126 files/directories (runtime: 30 sec)
-DFS scanner: Scanned 259 files/directories (runtime: 60 sec)
-DFS scanner: Scanned 402 files/directories (runtime: 90 sec)
-DFS scanner: Scanned 536 files/directories (runtime: 120 sec)
 DFS scanner: Done! (runtime: 144 sec)
 DFS scanner: 640 scanned objects
 DFS scanner: 640 files
@@ -63,11 +59,18 @@ Pool space info:
   Total size: 97 TB
   Free: 83 TB, min:20 GB, max:21 GB, mean:21 GB
   
+##########################################
 
-  # Test read 1TiB with 1 fio process succeeded
-  $HOME/local/bin/fio --ioengine=dfs --pool=e2sar --cont=fio-1tib-fs16g \
->   --rw=read --bs=2m --numjobs=64 --iodepth=16 \
->   --filename_format='large.$jobnum' \
->   --time_based=0 --group_reporting=1 \
->   --output-format=json --output=fio-read1TiB-seqread-fs16g \
->   --name=test-read1ti --size=16gb
+# Write 1TiB of 4MiB files succeeded
+xmei@x4407c5s5b0n0:~/iobench/pdsw26_daos-bench/scripts/aurora/fio> daos fs scan e2sar test-1tib-fs4m 
+DFS scanner: Start (2026-07-08-19:34:02)
+DFS scanner: Done! (runtime: 752 sec)
+DFS scanner: 262144 scanned objects
+DFS scanner: 262144 files
+DFS scanner: 0 symlinks
+DFS scanner: 0 directories
+DFS scanner: 1 max tree depth
+DFS scanner: 1099511627776 bytes of total data
+DFS scanner: 4194304 bytes per file on average
+DFS scanner: 4194304 bytes is largest file size
+DFS scanner: 262144 entries in the largest directory

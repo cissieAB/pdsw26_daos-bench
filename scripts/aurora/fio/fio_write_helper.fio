@@ -1,0 +1,39 @@
+# fio write benchmark: DAOS POSIX container, native DFS engine.
+#
+# Used by a single section. 
+# Fully succeeded with 1 TiB only. 10 TiB of 16 GiB files (nj=640, iod=16) ALMOST succeeded.
+#
+# Example - 
+#   $HOME/local/bin/fio \
+#         --ioengine=dfs --chunk_size=2m --pool=e2sar --cont=${CONT} \
+#         --section=fs16g \
+#         --output-format=json --output=fio-$(date +%s).json \
+#         <this-file>.fio'
+#
+
+[global]
+rw=randwrite
+thread=1
+create_on_open=1
+group_reporting=1
+
+# --- Sc.1-style: many small files (1 TiB of 4 MiB files) ---
+[fs4m]
+bs=2m
+iodepth=1               # must <=2, filesize (4 MiB) / chunk_size (2MiB) = 2
+numjobs=64              # single-node concurrency = numjobs
+size=16g                # size = volume / numjobs
+nrfiles=4096            # 4 MiB x nrfiles = size
+file_service_type=sequential
+filename_format=small.$jobnum.$filenum
+
+
+# --- Sc.2-style: few large files (1 TiB of 16 GiB files) ---
+[fs16g]
+stonewall
+bs=2m
+iodepth=16
+numjobs=64
+filesize=16g
+file_service_type=sequential
+filename_format=large.$jobnum

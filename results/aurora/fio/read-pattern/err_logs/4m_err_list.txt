@@ -1023,3 +1023,41 @@ total 3672064
 -rw------- 1 xmei users 4194304 Jul  8 17:48 small.9.7
 -rw------- 1 xmei users 4194304 Jul  8 17:48 small.9.8
 -rw------- 1 xmei users 2097152 Jul  8 17:48 small.9.9
+
+# ============================================================================
+# ANALYSIS REPORT (2026-07-08) - failed 4 MiB small-file run (write-small_fs-4m)
+# Run config: ioengine=dfs, bs=2m, iodepth=16 (global), numjobs=64,
+#             size=16g/job, nrfiles=4096, file_service_type=sequential,
+#             create_on_open=1, chunk_size=2m. Job aborted after ~5 s, err=22.
+#
+# What the listing shows
+# ----------------------
+#   * 1024 files total = 64 jobs x exactly 16 files each (indices .0-.15),
+#     out of 4096 intended files per job. 3.5 GiB written of 1 TiB planned.
+#   * Files .0-.7 of EVERY job: complete, 4 MiB (all 64 jobs, 0 partial).
+#   * Files .8-.15 of EVERY job: created but broken - 255 of 512 are 2 MiB,
+#     the rest 4 MiB (likely sparse: only the offset-2M block landed).
+#     Partial files are spread evenly across .8-.15 (26-38 per index).
+#
+# Interpretation
+# --------------
+# With 4 MiB files and bs=2m, each file holds exactly 2 blocks. iodepth=16
+# therefore forces fio to keep async I/O in flight across 8 files at once.
+# The first window (files .0-.7, 16 io_us) completed cleanly in every job.
+# When fio opened the next 8 files (.8-.15) for the second window, every job
+# hit EINVAL (err=22) from dfs_write on those files (see fio-write.err.json:
+# "io_u error on file small.X.8..15: Invalid argument"), and dfs_release on
+# the same files also failed with 22. The failure boundary at exactly
+# iodepth/blocks_per_file = 16/2 = 8 files, identical in all 64 jobs, shows
+# this is a fio DFS-ioengine limitation with I/O depth spanning file
+# rotation - not a DAOS pool/capacity/network issue.
+#
+# Fix
+# ---
+# Keep iodepth <= blocks-per-file (<= 2 here) for the small-file section;
+# fio_write_helper.fio now sets iodepth=1. The large-file section (16 GiB
+# files = 8192 blocks) tolerates iodepth=16 within a file, but the same
+# rotation hazard exists at each nrfiles switch - smoke-test with small
+# filesize before a full 10 TiB run, or use openfiles=1 to force a full
+# close before opening the next file.
+# ============================================================================
