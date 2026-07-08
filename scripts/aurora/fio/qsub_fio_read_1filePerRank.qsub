@@ -16,6 +16,7 @@
 # qsub -v as a comma-separated list, e.g.:
 #   qsub -l select=2:ncpus=208 -v PATTERN=randread qsub_fio_read_1tib.qsub
 #   qsub -l select=2:ncpus=208 -v PATTERN=randread,BS=1m,NITERS=5 qsub_fio_read_1tib.qsub
+#   qsub -l select=20:ncpus=208 -v CONT=fio-10tib-fs16g,NFILES=640 qsub_fio_read_1tib.qsub
 # (Exporting the variable in your shell before qsub does NOT reach the job
 # unless you also pass -V, which forwards your whole environment.)
 #
@@ -41,7 +42,6 @@ cd "${PBS_O_WORKDIR}"
 # ---------------------------------------------------------------------------
 export FIO="${FIO:-${HOME}/local/bin/fio}"
 export POOL="${DAOS_POOL_NAME:-e2sar}"
-export CONT="${DAOS_CONT_NAME:-fio-1tib-fs16g}"
 export PATTERN="${PATTERN:-read}"          # read | randread
 export BS="${BS:-2m}"
 export CHUNK_SIZE="${CHUNK_SIZE:-2m}"
@@ -50,7 +50,8 @@ export SIZE="${SIZE:-16g}"                 # bytes each rank reads from its file
 
 NITERS="${NITERS:-1}"                     # repeated read passes
 NFILES="${NFILES:-64}"                     # large.0 .. large.(NFILES-1)
-RANK_SCRIPT="${PBS_O_WORKDIR}/fio_read_1file-per-rank.sh"
+export CONT="${CONT:-fio}"                 # container name
+RANK_SCRIPT="${PBS_O_WORKDIR}/mpi-fio_read_1file-per-rank.sh"
 
 NNODES=$(wc -l < "${PBS_NODEFILE}")
 NRANKS="${NFILES}"                         # one rank per file

@@ -3,7 +3,7 @@
 # Used by a single section. 
 # Fully succeeded with 1 TiB only. 10 TiB of 16 GiB files (nj=640, iod=16) ALMOST succeeded.
 #
-# Example - 
+# Example (on an interative DAOS client node)- 
 #   $HOME/local/bin/fio \
 #         --ioengine=dfs --chunk_size=2m --pool=e2sar --cont=${CONT} \
 #         --section=fs16g \
