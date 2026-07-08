@@ -19,20 +19,20 @@ iodepth=16
 create_on_open=1
 group_reporting=1
 
-; --- Sc.1-style: many small files (10 TiB = 2,621,440 x 4 MiB) ---
+; --- Sc.1-style: many small files (1 TiB = 2,621,44 x 4 MiB) ---
 [write-small_fs-4m]
 bs=2m
-filesize=4m
-numjobs=
-nrfiles=5120
+numjobs=64
+size=16g                ; per job; fio divides by nrfiles -> 4 MiB/file
+nrfiles=4096
 file_service_type=sequential
 filename_format=small.$jobnum.$filenum
 
 
-; --- Sc.2-style: few large files (10 TiB = 640 x 16 GiB) ---
+; --- Sc.2-style: few large files (1 TiB = 64 x 16 GiB) ---
 [write-large_fs-16g]
 stonewall
 bs=2m
 filesize=16g
-numjobs=640
+numjobs=64
 filename_format=large.$jobnum

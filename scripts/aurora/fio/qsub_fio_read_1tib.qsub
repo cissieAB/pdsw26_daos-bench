@@ -52,7 +52,7 @@ export CHUNK_SIZE="${CHUNK_SIZE:-2m}"
 export IODEPTH="${IODEPTH:-16}"
 export SIZE="${SIZE:-16g}"                 # bytes each rank reads from its file
 
-NITERS="${NITERS:-10}"                     # repeated read passes
+NITERS="${NITERS:-1}"                     # repeated read passes
 NFILES="${NFILES:-64}"                     # large.0 .. large.(NFILES-1)
 RANK_SCRIPT="${PBS_O_WORKDIR}/fio_read_1tib_rank.sh"
 
