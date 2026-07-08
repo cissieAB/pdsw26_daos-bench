@@ -1,22 +1,24 @@
 #!/bin/bash
 
-# 1 TiB sequential-read benchmark: MPI-launched fio, one rank per file.
-# Wraps fio_read_1tib_rank.sh — each rank runs a single fio job that reads
-# exactly SIZE (16g) from its own file large.$RANK, then stops.
-# The container must already hold the large.0 .. large.(NFILES-1) files
-# (written by the 1 TiB write job); this job is a read-only pass.
+# Sequential-read benchmark: MPI-launched fio, one rank per file.
+# Wraps mpi-fio_read_1file-per-rank.sh — each rank runs a single fio job that
+# reads exactly SIZE (16g) from its own file large.$RANK, then stops.
+# The container CONT must already hold the large.0 .. large.(NFILES-1) files
+# (written by the matching write job); this job is a read-only pass.
+# Total data read per pass = NFILES x SIZE (e.g. 64 x 16g = 1 TiB,
+# 640 x 16g = 10 TiB).
 #
 # The read pass is repeated NITERS times (default 1).
 #
-# Run with: qsub -l select=<node_number>:ncpus=208 qsub_fio_read_1tib.qsub
+# Run with: qsub -l select=<node_number>:ncpus=208 qsub_fio_read_1filePerRank.qsub
 # NFILES ranks are spread evenly over the nodes, so <node_number> must
 # divide NFILES (e.g. select=2 -> 64 ranks at ppn 32).
 #
 # To change any env-overridable knob (see section 0 below), pass it with
 # qsub -v as a comma-separated list, e.g.:
-#   qsub -l select=2:ncpus=208 -v PATTERN=randread qsub_fio_read_1tib.qsub
-#   qsub -l select=2:ncpus=208 -v PATTERN=randread,BS=1m,NITERS=5 qsub_fio_read_1tib.qsub
-#   qsub -l select=20:ncpus=208 -v CONT=fio-10tib-fs16g,NFILES=640 qsub_fio_read_1tib.qsub
+#   qsub -l select=2:ncpus=208 -v PATTERN=randread qsub_fio_read_1filePerRank.qsub
+#   qsub -l select=2:ncpus=208 -v PATTERN=randread,BS=1m,NITERS=5 qsub_fio_read_1filePerRank.qsub
+#   qsub -l select=20:ncpus=208 -v CONT=fio-10tib-fs16g,NFILES=640 qsub_fio_read_1filePerRank.qsub
 # (Exporting the variable in your shell before qsub does NOT reach the job
 # unless you also pass -V, which forwards your whole environment.)
 #
@@ -50,7 +52,7 @@ export SIZE="${SIZE:-16g}"                 # bytes each rank reads from its file
 
 NITERS="${NITERS:-1}"                     # repeated read passes
 NFILES="${NFILES:-64}"                     # large.0 .. large.(NFILES-1)
-export CONT="${CONT:-fio}"                 # container name
+export CONT="${CONT:-fio-1tib-fs16g}"                 # container name
 RANK_SCRIPT="${PBS_O_WORKDIR}/mpi-fio_read_1file-per-rank.sh"
 
 NNODES=$(wc -l < "${PBS_NODEFILE}")
@@ -61,7 +63,7 @@ if (( NRANKS % NNODES != 0 )); then
 fi
 PPN=$(( NRANKS / NNODES ))
 
-export OUTPUT_DIR="${PBS_O_WORKDIR}/read_1tib_n${NNODES}_ppn${PPN}_bs${BS}_iod${IODEPTH}_${PBS_JOBID%%.*}"
+export OUTPUT_DIR="${PBS_O_WORKDIR}/${PATTERN}_${CONT}_n${NNODES}_ppn${PPN}_bs${BS}_iod${IODEPTH}_${PBS_JOBID%%.*}"
 # LABEL is set per iteration inside the loop below (…_iterNN_<epoch>).
 
 # ---------------------------------------------------------------------------
@@ -95,7 +97,7 @@ echo "Output: ${OUTPUT_DIR}"
 TOTAL_START=${SECONDS}
 
 for (( ITER=1; ITER<=NITERS; ITER++ )); do
-    export LABEL="fio_1tib_${PATTERN}_n${NNODES}_ppn${PPN}_iter$(printf '%02d' "${ITER}")_$(date +%s)"
+    export LABEL="fio_${PATTERN}_n${NNODES}_ppn${PPN}_iter$(printf '%02d' "${ITER}")_$(date +%s)"
     echo "=== Iteration ${ITER}/${NITERS} (label ${LABEL}) ==="
 
     START_TIME=${SECONDS}

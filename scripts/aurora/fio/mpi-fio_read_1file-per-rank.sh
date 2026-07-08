@@ -1,16 +1,16 @@
 #!/usr/bin/bash
 
-# Per-rank fio launcher — invoked by mpiexec from qsub_fio_read_1tib.qsub.
+# Per-rank fio launcher — invoked by mpiexec from qsub_fio_read_1filePerRank.qsub.
 # fio is not MPI-aware, so each rank is an independent fio process running
 # a single job that reads exactly one file: rank R reads large.R.
 # The job reads exactly SIZE bytes (default 16g) from its file, then stops
 # (no time_based cutoff).
 #
-# MPI launch: one rank per file. The 1 TiB dataset is 64 files of 16 GiB
-# (large.0 .. large.63), so launch 64 ranks total, e.g. from the qsub script:
+# MPI launch: one rank per file, so -np = number of files in the dataset
+# (e.g. 64 for the 1 TiB dataset of 16 GiB files, 640 for the 10 TiB one):
 #
 #   export FIO=... POOL=... CONT=... PATTERN=read OUTPUT_DIR=... LABEL=...
-#   mpiexec -np 64 -ppn 32 -genvall /path/to/fio_read_1tib_rank.sh
+#   mpiexec -np 64 -ppn 32 -genvall /path/to/mpi-fio_read_1file-per-rank.sh
 #
 # (-np = total ranks = number of files; -ppn = ranks per node, so
 #  -np 64 -ppn 32 uses 2 nodes; -genvall forwards the env below to
