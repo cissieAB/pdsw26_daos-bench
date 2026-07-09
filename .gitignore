@@ -13,3 +13,6 @@
 
 # PBS job logs
 *.qsub.o*
+
+# Claude Code personal settings
+.claude/settings.local.json
