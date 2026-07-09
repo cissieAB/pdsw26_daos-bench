@@ -49,12 +49,8 @@ export PATTERN="${PATTERN:-read}"          # read | randread
 export BS="${BS:-2m}"
 export CHUNK_SIZE="${CHUNK_SIZE:-2m}"
 export IODEPTH="${IODEPTH:-16}"
-export SIZE="${SIZE:-100%}"                # portion of each file read per pass;
-                                           # 100% = whole file once. Never set an
-                                           # absolute value above the real file
-                                           # size: fio would unlink the file (see
-                                           # rank script).
-
+export SIZE="${SIZE:-15g%}"              # because some files are not fully 16 GiB,
+                                        # use 15g to read the whole file
 NITERS="${NITERS:-1}"                     # repeated read passes
 NFILES="${NFILES:-64}"                     # large.0 .. large.(NFILES-1)
 export CONT="${CONT:-fio-1tib-fs16g}"                 # container name

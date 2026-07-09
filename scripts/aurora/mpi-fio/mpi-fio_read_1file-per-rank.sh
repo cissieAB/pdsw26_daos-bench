@@ -32,7 +32,7 @@ RANK="${PALS_RANKID:-${PMI_RANK:?neither PALS_RANKID nor PMI_RANK is set}}"
 BS="${BS:-2m}"
 CHUNK_SIZE="${CHUNK_SIZE:-2m}"
 IODEPTH="${IODEPTH:-16}"
-SIZE="${SIZE:-100%}"
+SIZE="${SIZE:-15g}"     # same reason for not using 16g as in qsub_fio_read_1filePerRank.qsub
 
 FILE="large.${RANK}"  # NOTE: a string
 
