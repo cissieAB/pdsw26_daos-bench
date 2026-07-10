@@ -29,6 +29,7 @@
 set -euo pipefail
 
 RANK="${PALS_RANKID:-${PMI_RANK:?neither PALS_RANKID nor PMI_RANK is set}}"
+HOST="$(hostname -s)"   # recorded in the output filename: rank->node mapping
 
 : "${POOL:?}" "${CONT:?}" "${PATTERN:?}" \
   "${OUTPUT_DIR:?}" "${LABEL:?}"
@@ -65,6 +66,6 @@ exec "${FIO}" \
     --randrepeat=0 \
     --group_reporting=1 \
     --output-format=json \
-    --output="${OUTPUT_DIR}/${LABEL}_rank$(printf '%03d' "${RANK}").json" \
+    --output="${OUTPUT_DIR}/${LABEL}_rank$(printf '%03d' "${RANK}")_${HOST}.json" \
     --name="smallfiles.${RANK}" \
     --filename_format="${FORMAT}"
