@@ -36,6 +36,7 @@ IODEPTH="${IODEPTH:-16}"
 SIZE="${SIZE:-15g}"     # same reason for not using 16g as in qsub_fio_read_1filePerRank.qsub
 
 FILE="large.${RANK}"  # NOTE: a string
+OUT="${OUTPUT_DIR}/${LABEL}_rank$(printf '%03d' "${RANK}")_${HOST}.json"
 
 # No end_fsync / create_on_open: read-only pass over existing data.
 # allow_file_create=0 makes a missing large.N fail loudly instead of
@@ -46,7 +47,7 @@ FILE="large.${RANK}"  # NOTE: a string
 # re-lay-out the file — it UNLINKS it first, then allow_file_create=0
 # blocks the recreate, so the job reads 0 bytes AND the data file is
 # gone. Keep SIZE at 100% (or <= the real file size).
-exec "${FIO}" \
+"${FIO}" \
     --ioengine=dfs \
     --pool="${POOL}" \
     --cont="${CONT}" \
@@ -60,6 +61,11 @@ exec "${FIO}" \
     --randrepeat=0 \
     --group_reporting=1 \
     --output-format=json \
-    --output="${OUTPUT_DIR}/${LABEL}_rank$(printf '%03d' "${RANK}")_${HOST}.json" \
+    --output="${OUT}" \
     --name="${FILE}" \
     --filename="${FILE}"
+
+# Stamp the rank's hostname into the JSON itself (not just the filename),
+# so per-rank results are still traceable to a node after files get merged
+# or renamed downstream.
+jq --arg h "${HOST}" '. + {hostname: $h}' "${OUT}" > "${OUT}.tmp" && mv "${OUT}.tmp" "${OUT}"

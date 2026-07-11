@@ -75,6 +75,8 @@ export OUTPUT_DIR="${PBS_O_WORKDIR}/${PATTERN}_${CONT}_n${NNODES}_ppn${PPN}_bs${
     || { echo "ERROR: fio at ${FIO} lacks the dfs ioengine" >&2; exit 1; }
 [[ -x "${RANK_SCRIPT}" ]] \
     || { echo "ERROR: rank script not executable at ${RANK_SCRIPT}" >&2; exit 1; }
+command -v jq >/dev/null \
+    || { echo "ERROR: jq not found in PATH (needed to stamp hostname into each rank's JSON)" >&2; exit 1; }
 
 daos pool query "${POOL}" >/dev/null \
     || { echo "ERROR: DAOS pool '${POOL}' not found" >&2; exit 1; }

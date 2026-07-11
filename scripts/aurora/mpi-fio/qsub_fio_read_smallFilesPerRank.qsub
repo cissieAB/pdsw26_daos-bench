@@ -1,26 +1,32 @@
 #!/bin/bash
 
-# Small-file sequential-read benchmark: MPI-launched fio, one rank per
-# write-side job. Wraps mpi-fio_read_smallfiles-per-rank.sh — each rank runs
-# a single fio job that reads SIZE (16g) spread over NRFILES (4096) files
-# small.$RANK.0 .. small.$RANK.(NRFILES-1), i.e. 4 MiB per file, then stops.
+# Small-file sequential-read benchmark: MPI-launched fio, ranks decoupled
+# from the write-side job count. Wraps mpi-fio_read_smallfiles-per-rank.sh —
+# the NJOBS x NRFILES_W files small.{0..NJOBS-1}.{0..NRFILES_W-1} (written
+# with filename_format=small.$jobnum.$filenum) are treated as one flat
+# namespace, and each of the NRANKS ranks runs a single fio job that reads
+# SIZE bytes over its own contiguous block of NRFILES files, then stops.
+# Defaults (NRANKS=NJOBS=64, NRFILES=4096, SIZE=16g) reproduce the old
+# strict mapping: rank R reads exactly write job R's files.
 # The container CONT must already hold the files written by the matching
-# fs4m write job (filename_format=small.$jobnum.$filenum, numjobs=NJOBS);
-# this job is a read-only pass.
-# Total data read per pass = NJOBS x SIZE (e.g. 64 x 16g = 1 TiB
+# fs4m write job; this job is a read-only pass.
+# Total data read per pass = NRANKS x SIZE (e.g. 64 x 16g = 1 TiB
 # in 64 x 4096 = 262144 files of 4 MiB).
 #
 # The read pass is repeated NITERS times (default 1).
 #
 # Run with: qsub -l select=<node_number>:ncpus=208 qsub_fio_read_smallFilesPerRank.qsub
-# NJOBS ranks are spread evenly over the nodes, so <node_number> must
-# divide NJOBS (e.g. select=2 -> 64 ranks at ppn 32).
+# NRANKS ranks are spread evenly over the nodes, so <node_number> must
+# divide NRANKS (e.g. select=2 -> 64 ranks at ppn 32).
 #
 # To change any env-overridable knob (see section 0 below), pass it with
 # qsub -v as a comma-separated list, e.g.:
 #   qsub -l select=2:ncpus=208 -v PATTERN=randread qsub_fio_read_smallFilesPerRank.qsub
 #   qsub -l select=2:ncpus=208 -v PATTERN=randread,NITERS=5 qsub_fio_read_smallFilesPerRank.qsub
 #   qsub -l select=2:ncpus=208 -v CONT=fio-1tib-fs4m qsub_fio_read_smallFilesPerRank.qsub
+#   qsub -l select=4:ncpus=208 -v NRANKS=128 qsub_fio_read_smallFilesPerRank.qsub
+#     (128 ranks at ppn 32; NRFILES defaults to 2048 and SIZE to 8g, so the
+#      whole dataset is still read exactly once per pass)
 # (Exporting the variable in your shell before qsub does NOT reach the job
 # unless you also pass -V, which forwards your whole environment.)
 #
@@ -50,20 +56,30 @@ export POOL="${DAOS_POOL_NAME:-e2sar}"
 export PATTERN="${PATTERN:-read}"          # read | randread
 export BS="${BS:-2m}"
 export CHUNK_SIZE="${CHUNK_SIZE:-2m}"
-export IODEPTH="${IODEPTH:-1}"             # <= filesize (4 MiB) / bs (2 MiB) = 2
-export SIZE="${SIZE:-16g}"                 # bytes each rank reads across its files
-export NRFILES="${NRFILES:-4096}"          # files per rank; SIZE/NRFILES = 4 MiB each
+export IODEPTH="${IODEPTH:-1}"             # iodepth <= filesize (4 MiB) / bs (2 MiB) = 2
 export FILE_SERVICE_TYPE="${FILE_SERVICE_TYPE:-sequential}"
 
 NITERS="${NITERS:-1}"                      # repeated read passes
-NJOBS="${NJOBS:-64}"                       # write-side numjobs = ranks; small.0..(NJOBS-1).*
+NJOBS="${NJOBS:-64}"                       # write-side numjobs; small.0..(NJOBS-1).*
+export NRFILES_W="${NRFILES_W:-4096}"      # write-side nrfiles; small.*.0..(NRFILES_W-1)
+NRANKS="${NRANKS:-${NJOBS}}"               # read ranks, decoupled from NJOBS
 export CONT="${CONT:-fio-1tib-fs4m}"       # container name
 RANK_SCRIPT="${PBS_O_WORKDIR}/mpi-fio_read_smallfiles-per-rank.sh"
 
+# Files per rank: default splits the whole NJOBS x NRFILES_W namespace evenly
+# over the ranks; SIZE defaults to reading each 4 MiB file fully.
+export NRFILES="${NRFILES:-$(( NJOBS * NRFILES_W / NRANKS ))}"
+export SIZE="${SIZE:-$(( NRFILES * 4 ))m}" # bytes each rank reads across its files
+
+if (( NRANKS * NRFILES > NJOBS * NRFILES_W )); then
+    echo "ERROR: NRANKS x NRFILES = $(( NRANKS * NRFILES )) exceeds the" \
+         "$(( NJOBS * NRFILES_W )) files in the dataset" >&2
+    exit 1
+fi
+
 NNODES=$(wc -l < "${PBS_NODEFILE}")
-NRANKS="${NJOBS}"                          # one rank per write-side job
 if (( NRANKS % NNODES != 0 )); then
-    echo "ERROR: NJOBS=${NJOBS} not divisible by NNODES=${NNODES}" >&2
+    echo "ERROR: NRANKS=${NRANKS} not divisible by NNODES=${NNODES}" >&2
     exit 1
 fi
 PPN=$(( NRANKS / NNODES ))
@@ -79,6 +95,8 @@ export OUTPUT_DIR="${PBS_O_WORKDIR}/${PATTERN}_${CONT}_n${NNODES}_ppn${PPN}_bs${
     || { echo "ERROR: fio at ${FIO} lacks the dfs ioengine" >&2; exit 1; }
 [[ -x "${RANK_SCRIPT}" ]] \
     || { echo "ERROR: rank script not executable at ${RANK_SCRIPT}" >&2; exit 1; }
+command -v jq >/dev/null \
+    || { echo "ERROR: jq not found in PATH (needed to stamp hostname into each rank's JSON)" >&2; exit 1; }
 
 daos pool query "${POOL}" >/dev/null \
     || { echo "ERROR: DAOS pool '${POOL}' not found" >&2; exit 1; }
@@ -89,14 +107,14 @@ daos cont query "${POOL}" "${CONT}" >/dev/null \
 mkdir -p "${OUTPUT_DIR}"
 
 echo "Pool: ${POOL}  Cont: ${CONT}  Pattern: ${PATTERN}"
-echo "Nodes: ${NNODES}  Ranks: ${NRANKS} (ppn ${PPN}, one rank per write-side job)"
+echo "Nodes: ${NNODES}  Ranks: ${NRANKS} (ppn ${PPN}; dataset ${NJOBS} x ${NRFILES_W} files)"
 echo "bs=${BS} chunk=${CHUNK_SIZE} iodepth=${IODEPTH} size=${SIZE}/rank over ${NRFILES} files"
 echo "Iterations: ${NITERS}"
 echo "Output: ${OUTPUT_DIR}"
 
 # ---------------------------------------------------------------------------
-# 2. Launch NITERS read passes: one fio process per rank,
-#    rank R reads small.R.0 .. small.R.(NRFILES-1)
+# 2. Launch NITERS read passes: one fio process per rank, rank R reads its
+#    contiguous NRFILES-file block of the flat small.j.f namespace
 # ---------------------------------------------------------------------------
 # No cache flush between iterations: dfs ioengine bypasses the kernel page
 # cache, and the DFS client cache dies with each iteration's fio processes.
