@@ -107,7 +107,7 @@ for (( ITER=1; ITER<=NITERS; ITER++ )); do
     mpiexec -np "${NRANKS}" -ppn "${PPN}" --no-vni -genvall -- "${RANK_SCRIPT}"
     ELAPSED=$(( SECONDS - START_TIME ))
     echo "Iteration ${ITER}/${NITERS}: all ${NRANKS} ranks done in ${ELAPSED} s"
-    sleep 10  # give the filesystem a moment to settle before the next iteration
+    sleep 30  # give the filesystem a moment to settle before the next iteration
 done
 
 TOTAL_ELAPSED=$(( SECONDS - TOTAL_START ))

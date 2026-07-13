@@ -7,8 +7,8 @@
 # numjobs=NJOBS_W, nrfiles=NRFILES_W) is treated as one flat namespace:
 #   global index g = 0 .. NJOBS_W*NRFILES_W - 1  <->  small.(g/NRFILES_W).(g%NRFILES_W)
 # Rank R reads the contiguous block g in [R*NRFILES, (R+1)*NRFILES), passed
-# to fio as an explicit colon-separated --filename list (fio's
-# filename_format cannot do this arithmetic itself). The rank count is
+# to fio as one repeated --filename flag per file (fio's filename_format
+# cannot do this arithmetic itself). The rank count is
 # therefore decoupled from the write-side numjobs; with NRFILES = NRFILES_W
 # and -np = NJOBS_W this degenerates to the old strict mapping (rank R reads
 # exactly write job R's files). The job reads SIZE bytes spread evenly over
@@ -59,16 +59,18 @@ PARSE_ONLY="${PARSE_ONLY:-0}"   # 1 = fio validates its options and exits, no I/
 
 # Rank R's contiguous slice of the flat namespace: global indices
 # [R*NRFILES, (R+1)*NRFILES), each mapped back to small.(g/NRFILES_W).(g%NRFILES_W).
-# Passed as one colon-separated --filename argument; a single exec arg is
-# capped at 128 KiB on Linux, which this stays under up to NRFILES ~ 8000.
-(( NRFILES <= 8000 )) \
-    || { echo "ERROR: NRFILES=${NRFILES} too large for a --filename list (max ~8000)" >&2; exit 1; }
+# Passed as one repeated --filename flag per file (NAME_ARGS below), NOT as a
+# single colon-separated --filename value: fio caps any one option value at
+# 4096 characters, which a colon-joined list of a few hundred filenames
+# already exceeds (verified experimentally with --parse-only) -- unrelated to
+# the shell's much higher ARG_MAX for the whole exec call.
+(( NRFILES <= 50000 )) \
+    || { echo "ERROR: NRFILES=${NRFILES} too large (exec argv limit)" >&2; exit 1; }
 START=$(( RANK * NRFILES ))
-NAMES=()
+NAME_ARGS=()
 for (( g=START; g<START+NRFILES; g++ )); do
-    NAMES+=( "small.$(( g / NRFILES_W )).$(( g % NRFILES_W ))" )
+    NAME_ARGS+=( "--filename=small.$(( g / NRFILES_W )).$(( g % NRFILES_W ))" )
 done
-FILELIST=$(IFS=:; echo "${NAMES[*]}")
 
 OUT="${OUTPUT_DIR}/${LABEL}_rank$(printf '%03d' "${RANK}")_${HOST}.json"
 
@@ -98,7 +100,7 @@ if [[ "${PARSE_ONLY}" == 1 ]]; then EXTRA+=( --parse-only ); fi
     --output-format=json \
     --output="${OUT}" \
     --name="smallfiles.${RANK}" \
-    --filename="${FILELIST}"
+    "${NAME_ARGS[@]}"
 
 # Stamp the rank's hostname into the JSON itself (not just the filename),
 # so per-rank results are still traceable to a node after files get merged

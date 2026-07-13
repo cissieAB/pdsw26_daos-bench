@@ -63,7 +63,7 @@ NITERS="${NITERS:-1}"                      # repeated read passes
 NJOBS="${NJOBS:-64}"                       # write-side numjobs; small.0..(NJOBS-1).*
 export NRFILES_W="${NRFILES_W:-4096}"      # write-side nrfiles; small.*.0..(NRFILES_W-1)
 NRANKS="${NRANKS:-${NJOBS}}"               # read ranks, decoupled from NJOBS
-export CONT="${CONT:-fio-1tib-fs4m}"       # container name
+export CONT="${CONT:-test-1tib-fs4m}"       # container name
 RANK_SCRIPT="${PBS_O_WORKDIR}/mpi-fio_read_smallfiles-per-rank.sh"
 
 # Files per rank: default splits the whole NJOBS x NRFILES_W namespace evenly
@@ -84,7 +84,7 @@ if (( NRANKS % NNODES != 0 )); then
 fi
 PPN=$(( NRANKS / NNODES ))
 
-export OUTPUT_DIR="${PBS_O_WORKDIR}/${PATTERN}_${CONT}_n${NNODES}_ppn${PPN}_bs${BS}_iod${IODEPTH}_${PBS_JOBID%%.*}"
+export OUTPUT_DIR="${PBS_O_WORKDIR}/${PATTERN}_${CONT}_n${NNODES}_ppn${PPN}_rank${SIZE}_bs${BS}_iod${IODEPTH}_${PBS_JOBID%%.*}"
 # LABEL is set per iteration inside the loop below (…_iterNN_<epoch>).
 
 # ---------------------------------------------------------------------------
@@ -121,14 +121,14 @@ echo "Output: ${OUTPUT_DIR}"
 TOTAL_START=${SECONDS}
 
 for (( ITER=1; ITER<=NITERS; ITER++ )); do
-    export LABEL="fio_${PATTERN}_n${NNODES}_ppn${PPN}_iter$(printf '%02d' "${ITER}")_$(date +%s)"
+    export LABEL="fio_${PATTERN}_n${NNODES}_ppn${PPN}_rank${SIZE}_iter$(printf '%02d' "${ITER}")_$(date +%s)"
     echo "=== Iteration ${ITER}/${NITERS} (label ${LABEL}) ==="
 
     START_TIME=${SECONDS}
     mpiexec -np "${NRANKS}" -ppn "${PPN}" --no-vni -genvall -- "${RANK_SCRIPT}"
     ELAPSED=$(( SECONDS - START_TIME ))
     echo "Iteration ${ITER}/${NITERS}: all ${NRANKS} ranks done in ${ELAPSED} s"
-    sleep 10  # give the filesystem a moment to settle before the next iteration
+    sleep 30  # give the filesystem a moment to settle before the next iteration
 done
 
 TOTAL_ELAPSED=$(( SECONDS - TOTAL_START ))
