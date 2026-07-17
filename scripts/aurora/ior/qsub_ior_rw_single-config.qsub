@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# Usage example: qsub -q debug-scaling -l select=<N>:ncpus=208 -v PPN=48,NITER=2,TX_SIZE=16M <this-script>.qsub
+# Usage example: qsub -l select=<N>:ncpus=208 -v PPN=48,NITER=2,TX_SIZE=16M,DISABLE_PAGE_CACHE=1 <this-script>.qsub
 # N is set via -l select=N; PPN defaults to 48, ITER defaults to 2, TX_SIZE defaults to 16M
+# DISABLE_PAGE_CACHE defaults to 0 (page cache allowed); set to 1 to bypass the Linux page cache via O_DIRECT (IOR -B)
 
 #PBS -l walltime=00:59:00
 #PBS -A e2sar-daos
@@ -18,11 +19,20 @@ POOL_NAME=e2sar
 PPN=${PPN:-48}
 NITER=${NITER:-2}
 TX_SIZE=${TX_SIZE:-16M}
+DISABLE_PAGE_CACHE=${DISABLE_PAGE_CACHE:-0}
 
 NNODES=$(wc -l < $PBS_NODEFILE)
 HOSTNAMES=$(cat $PBS_NODEFILE | tr '\n' ',')
 echo "Nodes (${NNODES}): ${HOSTNAMES}"
-echo "PPN: ${PPN}, NITER: ${NITER}, TX_SIZE: ${TX_SIZE}"
+echo "PPN: ${PPN}, NITER: ${NITER}, TX_SIZE: ${TX_SIZE}, DISABLE_PAGE_CACHE: ${DISABLE_PAGE_CACHE}"
+
+# When enabled, bypass the Linux page cache with O_DIRECT and tag the LOG label accordingly
+IOR_CACHE_FLAG=""
+CACHE_LABEL="cached"
+if [ "${DISABLE_PAGE_CACHE}" = "1" ]; then
+    IOR_CACHE_FLAG="-B"
+    CACHE_LABEL="nocache"
+fi
 
 START_TIME=$SECONDS
 
@@ -79,7 +89,7 @@ daos container get-prop $POOL_NAME $CONTAINER_NAME
 # IOR smoke test
 LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
                                             --no-vni -genvall -- \
-                                            ior -a DFS -w -r \
+                                            ior -a DFS -w -r ${IOR_CACHE_FLAG} \
                                             --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
                                             -o /ior-smoke \
                                             -b 64M -t 16M
@@ -90,14 +100,14 @@ mkdir -p $RESULTS_DIR
 
 NSEGMENTS=32
 
-echo -e "\nRunning IOR read-write with transfer size: $TX_SIZE, RANKS_PER_NODE: ${RANKS_PER_NODE}, total ranks: $NRANKS"
+echo -e "\nRunning IOR read-write with transfer size: $TX_SIZE, RANKS_PER_NODE: ${RANKS_PER_NODE}, total ranks: $NRANKS, cache: ${CACHE_LABEL}"
 LD_PRELOAD=/usr/lib64/libpil4dfs.so mpiexec -np ${NRANKS} -ppn ${RANKS_PER_NODE} --cpu-bind ${CPU_BINDING_SKIP1}  \
                                             --no-vni -genvall -- \
-                                            ior -a DFS -w -r \
+                                            ior -a DFS -w -r ${IOR_CACHE_FLAG} \
                                             --dfs.pool $POOL_NAME --dfs.cont $CONTAINER_NAME --dfs.chunk_size=2m \
                                             -o /ior-rw-tx_${TX_SIZE}-ppn_${RANKS_PER_NODE} \
                                             -s ${NSEGMENTS} -b 128M -t ${TX_SIZE} -i ${NITER} \
-                                            -O summaryFile=${RESULTS_DIR}/ior_rw_n-${NNODES}_ppn-${RANKS_PER_NODE}_tx-${TX_SIZE}_$(date +%s).csv -O summaryFormat=CSV
+                                            -O summaryFile=${RESULTS_DIR}/ior_rw_n-${NNODES}_ppn-${RANKS_PER_NODE}_tx-${TX_SIZE}_${CACHE_LABEL}_$(date +%s).csv -O summaryFormat=CSV
 
 
 # Destroy container
