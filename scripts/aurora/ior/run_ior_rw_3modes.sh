@@ -1,7 +1,7 @@
 #!/usr/bin/bash
 
-# Interactive IOR read-after-write launcher, -B (useO_DIRECT) mode -- bypasses the
-# Linux page cache.
+# Interactive IOR read-after-write launcher, O_DIRECT mode (--posix.odirect) -- bypasses
+# the Linux page cache.
 # Run this directly inside an interactive PBS session you already hold, e.g.:
 #   qsub -I -l select=<N>:ncpus=208 -l walltime=00:59:00 -A e2sar-daos -q debug \
 #        -l filesystems=home:flare:daos_user_fs
@@ -16,9 +16,10 @@
 #   POSIX_IL  -- dfuse mount + libpil4dfs.so interception library (LD_PRELOAD)
 #   DFS       -- native DFS API (ior -a DFS), no dfuse mount and no interception library needed
 #
-# -B (IOR's useO_DIRECT flag) is passed on every run: all 3 modes bypass the Linux page
-# cache via O_DIRECT, i.e. the "nocache" side of the DISABLE_PAGE_CACHE flag in
-# qsub_ior_rw_single-config.qsub.
+# O_DIRECT (--posix.odirect; the old global -B was removed from IOR) is passed on the
+# POSIX and POSIX_IL runs so they bypass the Linux page cache, i.e. the "nocache" side of
+# the DISABLE_PAGE_CACHE flag in qsub_ior_rw_single-config.qsub. DFS has no such flag and
+# needs none: the native DFS API never goes through the kernel page cache.
 # CAVEAT: O_DIRECT semantics on dfuse (POSIX / POSIX_IL) depend on how the mount was
 # launched -- confirm launch-dfuse.sh actually passes O_DIRECT through rather than
 # silently falling back to buffered I/O before trusting the "nocache" label on those runs.
@@ -155,20 +156,23 @@ run_mode() {
     echo "########################################################"
 
     local mnt="${DFUSE_MNT_ROOT}/${POOL_NAME}/${cont}"
-    local target dfs_opts=""
+    local target dfs_opts="" direct_flag=""
 
     if [[ "${mode}" == "DFS" ]]; then
+        # DFS API never touches the kernel page cache; no O_DIRECT knob exists.
         target="/ior"
         dfs_opts="--dfs.pool $POOL_NAME --dfs.cont $cont --dfs.chunk_size=2m"
     else
+        # Newer IOR dropped the global -B flag; O_DIRECT is per-module now.
         target="${mnt}/ior"
+        direct_flag="--posix.odirect"
     fi
 
     echo "Running IOR smoke test (${mode})"
     setup_access "${mode}" "${cont}" "${mnt}"
     env ${preload:+LD_PRELOAD=${preload}} mpiexec -np ${NRANKS} -ppn ${PPN} --cpu-bind ${CPU_BINDING_SKIP1} \
                                                 --no-vni -genvall -- \
-                                                ior -a "${ior_api}" -w -r -B \
+                                                ior -a "${ior_api}" -w -r ${direct_flag} \
                                                 ${dfs_opts} \
                                                 -o "${target}-smoke" \
                                                 -b 64M -t 16M
@@ -179,7 +183,7 @@ run_mode() {
         setup_access "${mode}" "${cont}" "${mnt}"
         env ${preload:+LD_PRELOAD=${preload}} mpiexec -np ${NRANKS} -ppn ${PPN} --cpu-bind ${CPU_BINDING_SKIP1} \
                                                     --no-vni -genvall -- \
-                                                    ior -a "${ior_api}" -w -r -B \
+                                                    ior -a "${ior_api}" -w -r ${direct_flag} \
                                                     ${dfs_opts} \
                                                     -o "${target}-rw-tx_${tx_size}" \
                                                     -s ${NSEGMENTS} -b 128M -t ${tx_size} -i ${NITER} \
