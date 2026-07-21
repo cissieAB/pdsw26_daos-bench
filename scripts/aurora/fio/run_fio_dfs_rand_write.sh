@@ -40,7 +40,7 @@ SIZE="2g"
 FIO_FILE="fio_data"
 NRUNS="${1:-10}"
 
-OUTPUT_DIR=../../../results/aurora/fio/3engines-rand_write
+OUTPUT_DIR=../../../results/aurora/fio/engine
 mkdir -p "${OUTPUT_DIR}"
 
 # ---------------------------------------------------------------------------

@@ -41,7 +41,7 @@ daos pool list | grep -q -- "$POOL_NAME" || { echo "No pool: $POOL_NAME"; exit 1
 
 
 # Compute node default path is $HOME
-WKDIR=$HOME/iobench/pdsw26_daos-bench/scripts/aurora/ior   # <=== Change dir as needed
+WKDIR=$HOME/iobench/pdsw26_daos-bench/scripts/aurora/ior/ior-rw-scaling   # <=== Change dir as needed
 cd "${WKDIR}"
 
 

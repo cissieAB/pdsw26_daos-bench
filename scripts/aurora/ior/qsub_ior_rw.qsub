@@ -80,7 +80,7 @@ destroy_container
 IOR_TX_SIZES=("2M" "16M")
 NSEGMENTS=32
 
-RESULTS_DIR="../../../results/aurora/ior/ior-rw"
+RESULTS_DIR="../../../results/aurora/ior/ior-rw-scaling"
 mkdir -p $RESULTS_DIR
 
 
