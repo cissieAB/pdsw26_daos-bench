@@ -16,19 +16,25 @@
 #   POSIX_IL  -- dfuse mount + libpil4dfs.so interception library (LD_PRELOAD)
 #   DFS       -- native DFS API (ior -a DFS), no dfuse mount and no interception library needed
 #
-# O_DIRECT (--posix.odirect; the old global -B was removed from IOR) is passed on the
-# POSIX and POSIX_IL runs so they bypass the Linux page cache, i.e. the "nocache" side of
-# the DISABLE_PAGE_CACHE flag in qsub_ior_rw_single-config.qsub. DFS has no such flag and
-# needs none: the native DFS API never goes through the kernel page cache.
+# DISABLE_PAGE_CACHE=1 (default) passes O_DIRECT (--posix.odirect; the old global -B was
+# removed from IOR) on the POSIX and POSIX_IL runs so they bypass the Linux page cache --
+# the same flag as in qsub_ior_rw_single-config.qsub. Set DISABLE_PAGE_CACHE=0 to run
+# buffered (page-cached) I/O instead; output filenames are labeled nocache/cache
+# accordingly. DFS has no such flag and needs none: the native DFS API never goes through
+# the kernel page cache, so its results are always labeled nocache.
 # CAVEAT: O_DIRECT semantics on dfuse (POSIX / POSIX_IL) depend on how the mount was
 # launched -- confirm launch-dfuse.sh actually passes O_DIRECT through rather than
 # silently falling back to buffered I/O before trusting the "nocache" label on those runs.
 #
 # Usage: ./run_ior_rw_3modes.sh
 # Env overrides:
-#   DAOS_POOL_NAME   (default: e2sar)
-#   NITER            (default: 10)
-#   DFUSE_MNT_ROOT   (default: /tmp; dfuse mounts land at $DFUSE_MNT_ROOT/$POOL_NAME/$CONTAINER)
+#   DAOS_POOL_NAME      (default: e2sar)
+#   NITER               (default: 10)
+#   DFUSE_MNT_ROOT      (default: /tmp; dfuse mounts land at $DFUSE_MNT_ROOT/$POOL_NAME/$CONTAINER)
+#   DISABLE_PAGE_CACHE  (default: 1; 1 = O_DIRECT on POSIX/POSIX_IL, 0 = buffered page-cached I/O)
+#   CHUNK_SIZE          (default: 2MiB; DFS chunk size set on every container at create time.
+#                        NOTE: the IOR --dfs.chunk_size flag for the DFS run is still hardcoded
+#                        to 2m -- keep them in sync if you override this.)
 #
 # NOTE: --chunk-size on `daos container create` is assumed to be the correct flag for
 # setting the DFS chunk size on a POSIX-type container ahead of dfuse mount (there is no
@@ -49,8 +55,9 @@ module load daos || { echo "Failed to load DAOS module"; exit 1; }
 # 0. Config
 # ---------------------------------------------------------------------------
 POOL_NAME="${DAOS_POOL_NAME:-e2sar}"
-NITER="${NITER:-5}"
-CHUNK_SIZE="2MiB"
+NITER="${NITER:-2}"
+DISABLE_PAGE_CACHE="${DISABLE_PAGE_CACHE:-1}"   # 1 = O_DIRECT on POSIX/POSIX_IL, 0 = buffered
+CHUNK_SIZE="${CHUNK_SIZE:-2MiB}"
 PPN=48
 NSEGMENTS=32
 IOR_TX_SIZES=("2M")
@@ -61,7 +68,7 @@ NNODES=$(wc -l < "$PBS_NODEFILE")
 HOSTNAMES=$(tr '\n' ',' < "$PBS_NODEFILE")
 NRANKS=$(( NNODES * PPN ))
 echo "Nodes (${NNODES}): ${HOSTNAMES}"
-echo "PPN: ${PPN}, NRANKS: ${NRANKS}, NITER: ${NITER}, chunk_size: ${CHUNK_SIZE}"
+echo "PPN: ${PPN}, NRANKS: ${NRANKS}, NITER: ${NITER}, chunk_size: ${CHUNK_SIZE}, disable_page_cache: ${DISABLE_PAGE_CACHE}"
 
 # skip-1 breadth scan. Bind 48 cores
 CPU_BINDING_SKIP1="list:4:6:56:58:9:11:61:63:12:14:64:66:17:19:69:71:20:22:72:74:25:27:77:79:28:30:80:82:33:35:85:87:36:38:88:90:41:43:93:95:44:46:96:98:49:51:100:102"
@@ -110,16 +117,17 @@ create_container() {
     CURRENT_CONT="$cont"
     echo "Container $cont created."
     daos container get-prop "$POOL_NAME" "$cont"
+    daos container query "$POOL_NAME" "$cont"
 }
 
-# Create the container fresh (DFS: just the container; POSIX/POSIX_IL: container +
-# chunk-size property + dfuse mount) right before a single IOR invocation.
+# Create the container fresh (all modes: chunk-size property; POSIX/POSIX_IL additionally
+# get a dfuse mount) right before a single IOR invocation. For DFS the property is
+# redundant -- IOR's --dfs.chunk_size overrides it per-file -- but setting it keeps the
+# container query output consistent across modes.
 setup_access() {
     local mode="$1" cont="$2" mnt="$3"
-    if [[ "${mode}" == "DFS" ]]; then
-        create_container "${cont}" ""
-    else
-        create_container "${cont}" "--chunk-size=${CHUNK_SIZE}"
+    create_container "${cont}" "--chunk-size=${CHUNK_SIZE}"
+    if [[ "${mode}" != "DFS" ]]; then
         mkdir -p "${mnt}"
         launch-dfuse.sh "${POOL_NAME}:${cont}"
         sleep 3
@@ -156,16 +164,23 @@ run_mode() {
     echo "########################################################"
 
     local mnt="${DFUSE_MNT_ROOT}/${POOL_NAME}/${cont}"
-    local target dfs_opts="" direct_flag=""
+    local target dfs_opts="" direct_flag="" cache_label="nocache"
 
     if [[ "${mode}" == "DFS" ]]; then
         # DFS API never touches the kernel page cache; no O_DIRECT knob exists.
         target="/ior"
         dfs_opts="--dfs.pool $POOL_NAME --dfs.cont $cont --dfs.chunk_size=2m"
+        if [[ "${DISABLE_PAGE_CACHE}" == "0" ]]; then
+            cache_label="cache"
+        fi
     else
-        # Newer IOR dropped the global -B flag; O_DIRECT is per-module now.
         target="${mnt}/ior"
-        direct_flag="--posix.odirect"
+        if [[ "${DISABLE_PAGE_CACHE}" == "1" ]]; then
+            # Newer IOR dropped the global -B flag; O_DIRECT is per-module now.
+            direct_flag="--posix.odirect"
+        else
+            cache_label="cache"
+        fi
     fi
 
     echo "Running IOR smoke test (${mode})"
@@ -187,7 +202,7 @@ run_mode() {
                                                     ${dfs_opts} \
                                                     -o "${target}-rw-tx_${tx_size}" \
                                                     -s ${NSEGMENTS} -b 128M -t ${tx_size} -i ${NITER} \
-                                                    -O summaryFile=${RESULTS_DIR}/ior_rw_${mode}_nocache_n-${NNODES}_ppn-${PPN}_tx-${tx_size}_$(date +%s).csv -O summaryFormat=CSV
+                                                    -O summaryFile=${RESULTS_DIR}/ior_rw_${mode}_${cache_label}_n-${NNODES}_ppn-${PPN}_tx-${tx_size}_$(date +%s).csv -O summaryFormat=CSV
         teardown_access "${mode}" "${cont}" "${mnt}"
         sleep 5
     done
@@ -197,7 +212,7 @@ run_mode() {
 # 3. Sweep: POSIX, POSIX+IL, DFS
 # ---------------------------------------------------------------------------
 run_mode "POSIX"    "POSIX" ""              "${USER}-ior_n${NNODES}_POSIX"
-run_mode "POSIX_IL" "POSIX" "${LIBPIL4DFS}" "${USER}-ior_n${NNODES}_POSIX_IL"
+# run_mode "POSIX_IL" "POSIX" "${LIBPIL4DFS}" "${USER}-ior_n${NNODES}_POSIX_IL"
 # run_mode "DFS"      "DFS"   ""              "${USER}-ior_n${NNODES}_DFS"
 
 ELAPSED_TIME=$((SECONDS - START_TIME))
