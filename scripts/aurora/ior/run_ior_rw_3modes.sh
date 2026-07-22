@@ -49,7 +49,7 @@ module load daos || { echo "Failed to load DAOS module"; exit 1; }
 # 0. Config
 # ---------------------------------------------------------------------------
 POOL_NAME="${DAOS_POOL_NAME:-e2sar}"
-NITER="${NITER:-10}"
+NITER="${NITER:-5}"
 CHUNK_SIZE="2MiB"
 PPN=48
 NSEGMENTS=32
@@ -198,7 +198,7 @@ run_mode() {
 # ---------------------------------------------------------------------------
 run_mode "POSIX"    "POSIX" ""              "${USER}-ior_n${NNODES}_POSIX"
 run_mode "POSIX_IL" "POSIX" "${LIBPIL4DFS}" "${USER}-ior_n${NNODES}_POSIX_IL"
-run_mode "DFS"      "DFS"   ""              "${USER}-ior_n${NNODES}_DFS"
+# run_mode "DFS"      "DFS"   ""              "${USER}-ior_n${NNODES}_DFS"
 
 ELAPSED_TIME=$((SECONDS - START_TIME))
 echo "Completed script in $ELAPSED_TIME seconds"
