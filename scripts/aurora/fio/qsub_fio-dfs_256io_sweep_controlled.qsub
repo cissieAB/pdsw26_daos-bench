@@ -1,0 +1,50 @@
+#!/bin/bash
+
+# PBS wrapper for run_fio-dfs_256io_sweep_controlled.sh on Aurora.
+#
+# Controlled (numjobs, iodepth) sweep at fixed aggregate concurrency:
+#   numjobs * iodepth = 256, 1 MiB requests, fixed 64-file / 8 GiB working set,
+#   60 s random write after a 10 s ramp. Single node, fio dfs ioengine.
+#
+# Run with:
+#   qsub -l select=1:ncpus=208 qsub_fio-dfs_256io_sweep_controlled.qsub
+#
+# Env-overridable knobs (pass via qsub -v as a comma-separated list):
+#   N_REPEATS       repetitions of the 5-config sweep (default 5 -> 25 runs)
+#   DAOS_POOL_NAME  DAOS pool (default e2sar; testbed uses iobench)
+#   DAOS_CONT_BASE  container name prefix (default fio_dfs_controlled_64files)
+#   OUTPUT_ROOT     results root (default <repo>/results/aurora/...)
+# Examples:
+#   qsub -l select=1:ncpus=208 -v N_REPEATS=1 qsub_fio-dfs_256io_sweep_controlled.qsub
+#   qsub -l select=1:ncpus=208 -v N_REPEATS=5,DAOS_POOL_NAME=e2sar qsub_fio-dfs_256io_sweep_controlled.qsub
+#
+# NOTE: walltime below fits N_REPEATS=5 (25 runs x ~90-100 s each, ~45 min).
+# Raise walltime/queue if you increase N_REPEATS.
+
+#PBS -l walltime=00:59:00
+#PBS -A e2sar-daos
+#PBS -q debug-scaling
+#PBS -l filesystems=home:flare:daos_user_fs
+#PBS -j oe
+
+set -euo pipefail
+
+# Load DAOS module
+module use /soft/modulefiles/ || { echo "Failed to use modulefiles"; exit 1; }
+module load daos || { echo "Failed to load DAOS module"; exit 1; }
+
+cd "${PBS_O_WORKDIR}"
+
+N_REPEATS="${N_REPEATS:-5}"
+RUN_SCRIPT="${PBS_O_WORKDIR}/run_fio-dfs_256io_sweep_controlled.sh"
+
+[[ -x "${RUN_SCRIPT}" ]] \
+    || { echo "ERROR: run script not executable at ${RUN_SCRIPT}" >&2; exit 1; }
+
+NNODES=$(wc -l < "${PBS_NODEFILE}")
+echo "Job ${PBS_JOBID%%.*} on ${NNODES} node(s): $(tr '\n' ',' < "${PBS_NODEFILE}")"
+echo "N_REPEATS=${N_REPEATS}"
+
+# Single-node experiment: fio runs directly on the primary compute node
+# (no mpiexec needed).
+"${RUN_SCRIPT}" "${N_REPEATS}"
