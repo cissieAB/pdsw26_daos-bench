@@ -188,7 +188,7 @@ for ((repeat = 1; repeat <= N_REPEATS; repeat++)); do
         echo "Start UTC         : ${start_utc}"
         echo "------------------------------------------------------------"
 
-        daos container create --type=POSIX "${POOL}" "${CONT}" >/dev/null
+        daos container create --type=POSIX --oclass=SX "${POOL}" "${CONT}" >/dev/null
         CURRENT_CONT="${CONT}"
 
         daos container getprop "${POOL}" "${CONT}" >"${PROP_LOG}"
