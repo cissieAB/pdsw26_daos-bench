@@ -5,28 +5,38 @@
 # The experiment varies (numjobs, iodepth) while holding constant:
 #   - numjobs * iodepth = 256
 #   - request size = 1 MiB
-#   - aggregate address space = 8 GiB
-#   - active DFS filename = 1 shared file
+#   - total DFS file/object count = 64
+#   - size of each DFS file = 128 MiB
+#   - aggregate working-set size = 8 GiB
 #   - workload = 60 s random write after a 10 s ramp period
 #
-# Each fio sub-job writes a disjoint region of the same 8 GiB file:
-#   4 x 64  -> 2 GiB per job
-#   8 x 32  -> 1 GiB per job
-#   16 x 16 -> 512 MiB per job
-#   32 x 8  -> 256 MiB per job
-#   64 x 4  -> 128 MiB per job
+# Each fio job owns a disjoint subset of the same fixed 64-file set:
+#   4 x 64  -> 16 files/job x 128 MiB = 2 GiB/job
+#   8 x 32  ->  8 files/job x 128 MiB = 1 GiB/job
+#   16 x 16 ->  4 files/job x 128 MiB = 512 MiB/job
+#   32 x 8  ->  2 files/job x 128 MiB = 256 MiB/job
+#   64 x 4  ->  1 file/job  x 128 MiB = 128 MiB/job
+#
+# Why this replaces the previous one-shared-file control:
+#   The earlier controlled attempt used one shared DFS filename plus disjoint
+#   offsets. That fixed the file/object count at one, but it also forced every
+#   fio job through one logical DFS object. On this testbed, the smoke test
+#   observed a DAOS RPC timeout. The container query already reported
+#   File Object Class = SX, so the timeout was not evidence that --file-oclass=SX
+#   was missing. This version avoids the single-object contention risk while
+#   still fixing total file/object count and aggregate working-set size.
 #
 # Usage:
-#   ./run_fio-dfs_256io_sweep_controlled.sh [N_REPEATS]
+#   ./run_fio-dfs_256io_sweep_fixed64files.sh [N_REPEATS]
 #
 # Examples:
-#   ./run_fio-dfs_256io_sweep_controlled.sh 1   # smoke test: 5 runs
-#   ./run_fio-dfs_256io_sweep_controlled.sh 5   # minimal paper campaign: 25 runs
+#   ./run_fio-dfs_256io_sweep_fixed64files.sh 1   # smoke test: 5 runs
+#   ./run_fio-dfs_256io_sweep_fixed64files.sh 5   # minimal paper campaign: 25 runs
 #
 # Optional environment variables:
 #   FIO_BIN_PATH=/home/xmei/local/bin/fio
 #   DAOS_POOL_NAME=iobench
-#   DAOS_CONT_BASE=fio_dfs_controlled
+#   DAOS_CONT_BASE=fio_dfs_controlled_64files
 #   OUTPUT_ROOT=/path/to/results
 #   RUNTIME_SEC=60
 #   RAMP_SEC=10
@@ -55,23 +65,30 @@ fi
 
 FIO_BIN_PATH="${FIO_BIN_PATH:-/home/xmei/local/bin/fio}"
 POOL="${DAOS_POOL_NAME:-iobench}"
-CONT_BASE="${DAOS_CONT_BASE:-fio_dfs_controlled}"
-OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/results/testbed/fio-dfs-256io-sweep-controlled}"
+CONT_BASE="${DAOS_CONT_BASE:-fio_dfs_controlled_64files}"
+OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/results/testbed/fio-dfs-256io-sweep-controlled-64files}"
 
 BLOCK_SIZE="1M"
-TOTAL_FILE_SIZE="8g"
-SHARED_FILENAME="fio_data.shared"
+TOTAL_OBJECTS=64
+FILE_SIZE="128m"
+TOTAL_DATASET_SIZE="8g"
+# Keep $jobnum and $filenum literal. fio expands them, not Bash.
+FILENAME_FORMAT='fio_data.$jobnum.$filenum'
 RUNTIME_SEC="${RUNTIME_SEC:-60}"
 RAMP_SEC="${RAMP_SEC:-10}"
 INTER_RUN_SLEEP_SEC="${INTER_RUN_SLEEP_SEC:-5}"
 
-# The five configurations preserve numjobs * iodepth = 256.
+# Fields: numjobs:iodepth:files_per_job:size_per_job
+# All configurations preserve:
+#   numjobs * iodepth       = 256 outstanding I/Os (nominal)
+#   numjobs * files_per_job = 64 DFS files/objects
+#   numjobs * size_per_job  = 8 GiB aggregate working set
 CONFIGS=(
-    "4:64:2g"
-    "8:32:1g"
-    "16:16:512m"
-    "32:8:256m"
-    "64:4:128m"
+    "4:64:16:2g"
+    "8:32:8:1g"
+    "16:16:4:512m"
+    "32:8:2:256m"
+    "64:4:1:128m"
 )
 N_CONFIGS="${#CONFIGS[@]}"
 
@@ -118,7 +135,7 @@ FIO="${FIO_BIN_PATH}"
 FIO_VERSION="$(${FIO} --version)"
 
 echo "============================================================"
-echo "Controlled fio DFS sweep"
+echo "Controlled fio DFS sweep: fixed 64-file layout"
 echo "============================================================"
 echo "Campaign ID       : ${CAMPAIGN_ID}"
 echo "Repository root   : ${REPO_ROOT}"
@@ -129,8 +146,10 @@ echo "DAOS pool         : ${POOL}"
 echo "Repetitions       : ${N_REPEATS}"
 echo "Configurations    : ${CONFIGS[*]}"
 echo "Block size        : ${BLOCK_SIZE}"
-echo "Shared file       : ${SHARED_FILENAME}"
-echo "Total file size   : ${TOTAL_FILE_SIZE}"
+echo "Total files       : ${TOTAL_OBJECTS}"
+echo "File size         : ${FILE_SIZE}"
+echo "Total dataset     : ${TOTAL_DATASET_SIZE}"
+echo "Filename format   : ${FILENAME_FORMAT}"
 echo "Measured runtime  : ${RUNTIME_SEC} s"
 echo "Ramp time         : ${RAMP_SEC} s"
 echo "============================================================"
@@ -146,7 +165,7 @@ if ! daos pool query "${POOL}" >/dev/null 2>&1; then
 fi
 
 printf '%s\n' \
-    $'campaign\trepeat\tposition\tnumjobs\tiodepth\taggregate_qd\tregion_size\ttotal_file_size\tcontainer\tresult_json\tstart_utc\tend_utc\tstatus' \
+    $'campaign\trepeat\tposition\tnumjobs\tiodepth\taggregate_qd\tfiles_per_job\ttotal_files\tfile_size\tsize_per_job\ttotal_dataset_size\tcontainer\tresult_json\tstart_utc\tend_utc\tstatus' \
     > "${MANIFEST}"
 
 SCRIPT_START_EPOCH="$(date +%s)"
@@ -161,11 +180,17 @@ for ((repeat = 1; repeat <= N_REPEATS; repeat++)); do
 
     for ((position = 0; position < N_CONFIGS; position++)); do
         config_index=$(((start_index + position) % N_CONFIGS))
-        IFS=':' read -r nj iod region_size <<< "${CONFIGS[config_index]}"
+        IFS=':' read -r nj iod files_per_job size_per_job <<< "${CONFIGS[config_index]}"
 
         aggregate_qd=$((nj * iod))
+        total_files=$((nj * files_per_job))
+
         if ((aggregate_qd != 256)); then
             echo "ERROR: invalid configuration nj=${nj}, iod=${iod}; aggregate QD=${aggregate_qd}." >&2
+            exit 1
+        fi
+        if ((total_files != TOTAL_OBJECTS)); then
+            echo "ERROR: invalid file layout nj=${nj}, files_per_job=${files_per_job}; total_files=${total_files}." >&2
             exit 1
         fi
 
@@ -181,18 +206,48 @@ for ((repeat = 1; repeat <= N_REPEATS; repeat++)); do
         echo "------------------------------------------------------------"
         echo "Repeat / position : ${repeat}/${N_REPEATS}, $((position + 1))/${N_CONFIGS}"
         echo "Configuration     : numjobs=${nj}, iodepth=${iod}, aggregate_qd=${aggregate_qd}"
-        echo "Per-job region    : ${region_size}"
-        echo "Shared file size  : ${TOTAL_FILE_SIZE}"
+        echo "Files per job     : ${files_per_job}"
+        echo "Total files       : ${total_files}"
+        echo "File size         : ${FILE_SIZE}"
+        echo "Size per job      : ${size_per_job}"
+        echo "Total dataset     : ${TOTAL_DATASET_SIZE}"
         echo "Container         : ${CONT}"
         echo "Result            : ${RESULT_JSON}"
         echo "Start UTC         : ${start_utc}"
         echo "------------------------------------------------------------"
 
-        daos container create --type=POSIX --oclass=SX "${POOL}" "${CONT}" >/dev/null
+        # Keep the container creation command consistent with the original script.
+        # The saved query/getprop output must be checked for the actual file object
+        # class. On the current testbed it reports File Object Class = SX already,
+        # so adding --file-oclass=SX would be redundant rather than a timeout fix.
+        daos container create --type=POSIX "${POOL}" "${CONT}" >/dev/null
         CURRENT_CONT="${CONT}"
 
         daos container getprop "${POOL}" "${CONT}" >"${PROP_LOG}"
         daos container query "${POOL}" "${CONT}" >"${QUERY_LOG}"
+
+        # ---------------------------------------------------------------------
+        # OLD ONE-SHARED-FILE CONTROL (DO NOT USE)
+        # ---------------------------------------------------------------------
+        # The following layout fixed object count at one, but all jobs accessed
+        # the same logical DFS object. Even with File Object Class = SX, this can
+        # create single-object contention. A smoke test observed DER_TIMEDOUT.
+        # The timeout does not prove all requests went to one target; SX is
+        # striped. The issue is that the experiment unnecessarily funnels all
+        # jobs through one logical object.
+        #
+        #   --filename="fio_data.shared" \
+        #   --filesize="8g" \
+        #   --size="${size_per_job}" \
+        #   --offset=0 \
+        #   --offset_increment="${size_per_job}" \
+        #
+        # REPLACEMENT BELOW:
+        #   - fixed 64 generated files for every configuration
+        #   - each file is 128 MiB
+        #   - each job receives 64/numjobs files
+        #   - filenames remain unique through $jobnum and $filenum
+        # ---------------------------------------------------------------------
 
         set +e
         "${FIO}" \
@@ -202,11 +257,12 @@ for ((repeat = 1; repeat <= N_REPEATS; repeat++)); do
             --ioengine=dfs \
             --pool="${POOL}" \
             --cont="${CONT}" \
-            --filename="${SHARED_FILENAME}" \
-            --filesize="${TOTAL_FILE_SIZE}" \
-            --size="${region_size}" \
-            --offset=0 \
-            --offset_increment="${region_size}" \
+            --filename_format="${FILENAME_FORMAT}" \
+            --nrfiles="${files_per_job}" \
+            --openfiles="${files_per_job}" \
+            --filesize="${FILE_SIZE}" \
+            --size="${size_per_job}" \
+            --file_service_type=roundrobin \
             --bs="${BLOCK_SIZE}" \
             --numjobs="${nj}" \
             --iodepth="${iod}" \
@@ -235,10 +291,11 @@ for ((repeat = 1; repeat <= N_REPEATS; repeat++)); do
             status="fio_exit_${fio_status}"
         fi
 
-        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
             "${CAMPAIGN_ID}" "${repeat}" "$((position + 1))" \
-            "${nj}" "${iod}" "${aggregate_qd}" "${region_size}" \
-            "${TOTAL_FILE_SIZE}" "${CONT}" "${RESULT_JSON}" \
+            "${nj}" "${iod}" "${aggregate_qd}" "${files_per_job}" \
+            "${total_files}" "${FILE_SIZE}" "${size_per_job}" \
+            "${TOTAL_DATASET_SIZE}" "${CONT}" "${RESULT_JSON}" \
             "${start_utc}" "${end_utc}" "${status}" \
             >> "${MANIFEST}"
 
