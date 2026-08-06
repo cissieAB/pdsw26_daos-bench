@@ -116,12 +116,17 @@ FIO_THREAD_MODE="${FIO_THREAD_MODE:-0}"
 #   numjobs * iodepth      = 256 outstanding I/Os (nominal)
 #   numjobs * size_per_job = 8 GiB aggregate working set
 # Object count is numjobs, and is NOT held constant; see the header note.
+# CONFIGS=(
+#     "4:64:2g"
+#     "8:32:1g"
+#     "16:16:512m"
+#     "32:8:256m"
+#     "64:4:128m"
+# )
 CONFIGS=(
     "4:64:2g"
     "8:32:1g"
     "16:16:512m"
-    "32:8:256m"
-    "64:4:128m"
 )
 N_CONFIGS="${#CONFIGS[@]}"
 

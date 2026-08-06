@@ -1,0 +1,14 @@
+  Container UUID              : 4eebbb6b-5586-41c2-acbd-45ef8da28674                        
+  Container Label             : fio_dfs_controlled_1file_r1_p4_bs1M_nj32_iod8_1785987104    
+  Container Type              : POSIX                                                       
+  Pool UUID                   : 33501c2e-2721-4811-adbb-118f78785224                        
+  Container redundancy factor : 0                                                           
+  Number of open handles      : 1                                                           
+  Latest open time            : 0x2732731e8c900000 (2026-08-06 03:31:45.709948928 +0000 UTC)
+  Latest close/modify time    : 0x2732731e97440000 (2026-08-06 03:31:45.721171968 +0000 UTC)
+  Number of snapshots         : 0                                                           
+  Object Class                : UNKNOWN                                                     
+  Dir Object Class            : S1                                                          
+  File Object Class           : S3877                                                       
+  Chunk Size                  : 1.0 MiB                                                     
+

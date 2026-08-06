@@ -1,0 +1,2 @@
+campaign	repeat	position	numjobs	iodepth	aggregate_qd	files_per_job	total_files	file_size	size_per_job	total_dataset_size	container	result_json	start_utc	end_utc	status
+20260805_223852	1	1	4	64	256	16	64	128m	2g	8g	fio_dfs_controlled_64files_r1_p1_bs1M_nj4_iod64_1785969534	/home/xmei/iobench/pdsw26_daos-bench/results/aurora/fio-dfs-256io-sweep-controlled-64files/20260805_223852/fio_r1_p1_bs1M_nj4_iod64_1785969534.json	2026-08-05T22:38:54Z	2026-08-05T22:40:12Z	fio_exit_4
