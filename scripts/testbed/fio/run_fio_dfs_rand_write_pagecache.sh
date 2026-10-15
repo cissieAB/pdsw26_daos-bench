@@ -18,7 +18,7 @@ set -euox pipefail
 # ---------------------------------------------------------------------------
 # 0. Config
 # ---------------------------------------------------------------------------
-FIO="/home/xmei/local/bin/fio"
+FIO="/testbed/home/xmei/projects/local/bin/fio"
 
 POOL="${DAOS_POOL_NAME:-iobench}"
 CONT="${DAOS_CONT_NAME:-fio_dfs}"

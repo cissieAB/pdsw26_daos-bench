@@ -25,7 +25,7 @@ done
 # 0. Config
 # ---------------------------------------------------------------------------
 FIO_NSF="/usr/bin/fio"         # system fio for NSF (no DFS engine needed)
-FIO_DFS="/home/xmei/local/bin/fio"    # custom build with DAOS DFS engine
+FIO_DFS="/testbed/home/xmei/projects/local/bin/fio"    # custom build with DAOS DFS engine
 
 SRC_FILE="/nvme/haidis/gluex/eta3pi_trees/data2020/ds_tree/PiPiGG_Tree_073266.root"
 

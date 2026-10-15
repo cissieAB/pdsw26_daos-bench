@@ -34,7 +34,7 @@
 #   ./run_fio-dfs_256io_sweep_fixed64files.sh 5   # minimal paper campaign: 25 runs
 #
 # Optional environment variables:
-#   FIO_BIN_PATH=/home/xmei/local/bin/fio
+#   FIO_BIN_PATH=/testbed/home/xmei/projects/local/bin/fio
 #   DAOS_POOL_NAME=iobench
 #   DAOS_CONT_BASE=fio_dfs_controlled_64files
 #   OUTPUT_ROOT=/path/to/results
@@ -63,7 +63,7 @@ else
     REPO_ROOT="$(cd -- "${SCRIPT_DIR}/../../.." && pwd)"
 fi
 
-FIO_BIN_PATH="${FIO_BIN_PATH:-/home/xmei/local/bin/fio}"
+FIO_BIN_PATH="${FIO_BIN_PATH:-/testbed/home/xmei/projects/local/bin/fio}"
 POOL="${DAOS_POOL_NAME:-iobench}"
 CONT_BASE="${DAOS_CONT_BASE:-fio_dfs_controlled_64files}"
 OUTPUT_ROOT="${OUTPUT_ROOT:-${REPO_ROOT}/results/testbed/fio-dfs-256io-sweep-controlled-64files}"

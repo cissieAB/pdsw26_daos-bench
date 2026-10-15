@@ -20,7 +20,7 @@ SCRIPT_START=$(date +%s)
 # ---------------------------------------------------------------------------
 # 0. Locate fio and verify version / DFS engine support
 # ---------------------------------------------------------------------------
-FIO_BIN_PATH="/home/xmei/local/bin/fio"         # <=== Update this path!!!
+FIO_BIN_PATH="/testbed/home/xmei/projects/local/bin/fio"         # <=== Update this path!!!
 
 if [[ ! -x "${FIO_BIN_PATH}" ]]; then
     echo "ERROR: fio not found or not executable at ${FIO_BIN_PATH}" >&2
